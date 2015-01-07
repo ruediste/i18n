@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static org.junit.Assert.assertEquals;
 

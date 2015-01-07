@@ -1,5 +1,6 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
+import com.github.ruediste1.i18n.messageFormat.PatternParser;
 import com.github.ruediste1.i18n.messageFormat.ast.Node;
 
 /**

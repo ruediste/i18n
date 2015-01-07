@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static org.junit.Assert.assertEquals;
 
@@ -6,7 +6,7 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-public class NumberHandlerTest extends FormatTypeParserTestBase {
+public class NumberParserTest extends FormatTypeParserTestBase {
 
 	@Test
 	public void testNoStyle() {

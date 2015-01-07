@@ -5,21 +5,28 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateTimeParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateTimePatternParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.NumberParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.PluralParser;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.TimeParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.lambdaPegParser.ParserFactory;
 import com.github.ruediste1.lambdaPegParser.Tracer;
 
-public class PatternFormatter {
+public class MessageFormat {
 
 	public static boolean trace;
 
 	private Map<String, Class<? extends FormatTypeParser>> handlers;
 
-	public PatternFormatter() {
+	public MessageFormat() {
 		this(defaultHandlers());
 	}
 
-	public PatternFormatter(
+	public MessageFormat(
 			Map<String, Class<? extends FormatTypeParser>> handlers) {
 		this.handlers = handlers;
 	}

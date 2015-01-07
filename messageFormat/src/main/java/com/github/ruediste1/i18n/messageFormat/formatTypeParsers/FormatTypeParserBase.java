@@ -1,7 +1,8 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static java.util.stream.Collectors.joining;
 
+import com.github.ruediste1.i18n.messageFormat.PatternParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 

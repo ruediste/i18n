@@ -1,10 +1,10 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.ast;
 
 import java.text.Format;
 import java.util.Locale;
 import java.util.function.Function;
 
-import com.github.ruediste1.i18n.messageFormat.ast.ArgumentNode;
+import com.github.ruediste1.i18n.messageFormat.FormattingContext;
 
 public class FormatNode extends ArgumentNode {
 

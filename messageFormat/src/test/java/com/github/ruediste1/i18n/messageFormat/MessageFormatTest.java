@@ -6,7 +6,9 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-public class PatternFormatterTest extends FormatTypeParserTestBase {
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParserTestBase;
+
+public class MessageFormatTest extends FormatTypeParserTestBase {
 
 	@Test
 	public void testEscaping() {

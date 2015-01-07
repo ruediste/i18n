@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;

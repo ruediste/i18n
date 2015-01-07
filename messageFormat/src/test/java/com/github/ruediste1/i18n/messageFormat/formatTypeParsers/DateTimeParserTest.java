@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static org.junit.Assert.assertEquals;
 
@@ -9,14 +9,14 @@ import java.util.Locale;
 
 import org.junit.Test;
 
-public class DateParserTest extends FormatTypeParserTestBase {
+public class DateTimeParserTest extends FormatTypeParserTestBase {
 
 	@Test
 	public void none() {
 		assertEquals(
-				"Jan 1, 2014",
+				"Jan 1, 2014 10:01:00 AM",
 				format.format(
-						"{param, date}",
+						"{param, dateTime}",
 						map("param", ZonedDateTime.of(
 								LocalDateTime.of(2014, 1, 1, 10, 01),
 								ZoneId.of("Z"))), Locale.ENGLISH));
@@ -25,16 +25,16 @@ public class DateParserTest extends FormatTypeParserTestBase {
 	@Test
 	public void predefined() {
 		assertEquals(
-				"2014-01-01Z",
+				"2014-01-01T10:01:00Z",
 				format.format(
-						"{param, date, iso}",
+						"{param, dateTime, iso}",
 						map("param", ZonedDateTime.of(
 								LocalDateTime.of(2014, 1, 1, 10, 01),
 								ZoneId.of("Z"))), Locale.ENGLISH));
 		assertEquals(
-				"2014-01-01",
+				"2014-01-01T10:01:00",
 				format.format(
-						"{param, date, isoLocal}",
+						"{param, dateTime, isoLocal}",
 						map("param", ZonedDateTime.of(
 								LocalDateTime.of(2014, 1, 1, 10, 01),
 								ZoneId.of("Z"))), Locale.ENGLISH));

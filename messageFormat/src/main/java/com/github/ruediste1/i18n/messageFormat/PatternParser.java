@@ -13,6 +13,7 @@ import com.github.ruediste1.i18n.messageFormat.ast.ArgumentNode;
 import com.github.ruediste1.i18n.messageFormat.ast.LiteralNode;
 import com.github.ruediste1.i18n.messageFormat.ast.Node;
 import com.github.ruediste1.i18n.messageFormat.ast.SequenceNode;
+import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 

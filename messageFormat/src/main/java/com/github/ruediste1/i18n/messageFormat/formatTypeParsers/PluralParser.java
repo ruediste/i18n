@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n.messageFormat;
+package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.github.ruediste1.i18n.messageFormat.FormattingContext;
 import com.github.ruediste1.i18n.messageFormat.ast.Node;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.ibm.icu.text.NumberFormat;

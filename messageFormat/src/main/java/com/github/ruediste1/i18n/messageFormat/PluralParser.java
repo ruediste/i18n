@@ -10,81 +10,64 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import com.github.ruediste1.i18n.messageFormat.ast.Node;
-import com.github.ruediste1.lambdaPegParser.DefaultParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
-import com.github.ruediste1.lambdaPegParser.ParserFactory;
 import com.ibm.icu.text.NumberFormat;
 import com.ibm.icu.text.PluralRules;
 
-public class PluralHandler implements FormatTypeHandler {
+/**
+ * Grammar:
+ * 
+ * <pre>
+ * style = , (selector '{' subPattern() '}')+
+ * selector = explicitValue | keyword
+ * explicitValue = '=' number
+ * keyword = [^[[:Pattern_Syntax:][:Pattern_White_Space:]]]+
+ * subPattern: normal pattern format, # are replaced
+ * </pre>
+ *
+ */
+public class PluralParser extends FormatTypeParserBase {
 
-	/**
-	 *
-	 * <blockquote>
-	 *
-	 * <pre>
-	 * pluralStyle = (selector '{' subPattern() '}')+
-	 * selector = explicitValue | keyword
-	 * explicitValue = '=' number
-	 * keyword = [^[[:Pattern_Syntax:][:Pattern_White_Space:]]]+
-	 * subPattern: normal pattern format, # are replaced
-	 * </pre>
-	 *
-	 * </blockquote>
-	 */
-	public static class PluralParser extends DefaultParser implements
-			FormatTypeParser {
+	public PluralParser(DefaultParsingContext ctx) {
+		super(ctx);
+	}
 
-		private PatternParser patternParser;
-
-		public PluralParser(DefaultParsingContext ctx) {
-			super(ctx);
-		}
-
-		@Override
-		public PluralHandler.PluralNode style(String argumentName) {
-			PluralHandler.PluralNode result = new PluralHandler.PluralNode(
-					argumentName);
-			String(",");
+	@Override
+	public PluralNode style(String argumentName) {
+		PluralNode result = new PluralNode(argumentName);
+		String(",");
+		patternParser.whiteSpace();
+		OneOrMore(() -> {
+			String selector = selector();
+			String("{");
+			Node node = subPattern(argumentName);
+			String("}");
 			patternParser.whiteSpace();
-			OneOrMore(() -> {
-				String selector = selector();
-				String("{");
-				Node node = subPattern(argumentName);
-				String("}");
-				patternParser.whiteSpace();
-				result.addRule(selector, node);
-			});
-			return result;
-		}
+			result.addRule(selector, node);
+		});
+		return result;
+	}
 
-		String selector() {
-			String result = Optional(() -> {
-				String("=");
-				patternParser.whiteSpace();
-				return "=";
-			}).orElse("");
-			result += OneOrMoreChars(Character::isLetterOrDigit,
-					"argument name");
+	public String selector() {
+		String result = Optional(() -> {
+			String("=");
 			patternParser.whiteSpace();
-			return result;
-		}
+			return "=";
+		}).orElse("");
+		result += OneOrMoreChars(Character::isLetterOrDigit, "argument name");
+		patternParser.whiteSpace();
+		return result;
+	}
 
-		Node subPattern(String argumentName) {
-			Set<Integer> stopChars = new HashSet<>();
-			stopChars.add((int) '#');
-			stopChars.add((int) '}');
+	public Node subPattern(String argumentName) {
+		Set<Integer> stopChars = new HashSet<>();
+		stopChars.add((int) '#');
+		stopChars.add((int) '}');
 
-			return patternParser.pattern(() -> {
-				String("#");
-				return new PluralHandler.HashNode(argumentName);
-			}, stopChars);
-		}
-
-		public void setPatternParser(PatternParser patternParser) {
-			this.patternParser = patternParser;
-		}
-
+		return patternParser.pattern(() -> {
+			String("#");
+			return new HashNode(argumentName);
+		}, stopChars);
 	}
 
 	public static class PluralNode implements Node {
@@ -166,14 +149,6 @@ public class PluralHandler implements FormatTypeHandler {
 		public Set<String> argumentNames() {
 			return Collections.singleton(argumentName);
 		}
-	}
-
-	@Override
-	public FormatTypeParser createParser(PatternParser parser,
-			DefaultParsingContext ctx) {
-		PluralParser result = ParserFactory.create(PluralParser.class, ctx);
-		result.setPatternParser(parser);
-		return result;
 	}
 
 }

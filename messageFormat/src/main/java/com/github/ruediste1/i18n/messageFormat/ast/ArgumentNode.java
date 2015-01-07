@@ -5,7 +5,7 @@ import java.util.Set;
 
 public abstract class ArgumentNode implements Node {
 
-	private String argumentName;
+	protected String argumentName;
 
 	public ArgumentNode(String argumentName) {
 		this.argumentName = argumentName;

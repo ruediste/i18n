@@ -7,9 +7,12 @@ import com.github.ruediste1.i18n.messageFormat.ast.Node;
  */
 public interface FormatTypeParser {
 	/**
-	 * The style part of a placeholder, including the initial comma. 
+	 * The style part of a placeholder, including the initial comma.
 	 * 
-	 * @param argumentName name of the argument
+	 * @param argumentName
+	 *            name of the argument
 	 */
 	Node style(String argumentName);
+
+	void setPatternParser(PatternParser patternParser);
 }

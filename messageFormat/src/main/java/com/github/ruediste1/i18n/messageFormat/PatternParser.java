@@ -15,7 +15,6 @@ import com.github.ruediste1.i18n.messageFormat.ast.Node;
 import com.github.ruediste1.i18n.messageFormat.ast.SequenceNode;
 import com.github.ruediste1.lambdaPegParser.DefaultParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
-import com.github.ruediste1.lambdaPegParser.NoMatchException;
 
 public class PatternParser extends DefaultParser {
 
@@ -81,7 +80,7 @@ public class PatternParser extends DefaultParser {
 		} else {
 			FormatTypeParser parser = formatParsers.get(type);
 			if (parser == null) {
-				throw new NoMatchException();
+				throw new RuntimeException("Unknown format type <"+type+"> known types: "+ formatParsers.keySet().stream().collect(joining(", ")));
 			}
 			result = parser.style(argumentName);
 		}

@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import com.github.ruediste1.i18n.messageFormat.ast.DateTimeNode;
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public abstract class DateTimeParserBase extends FormatTypeParserBase {
@@ -20,15 +20,15 @@ public abstract class DateTimeParserBase extends FormatTypeParserBase {
 	}
 
 	@Override
-	public Node style(String argumentName) {
+	public PatternNode style(String argumentName) {
 		return Optional(
 				() -> {
 					String(",");
-					patternParser.whiteSpace();
+					whiteSpace();
 
 					java.lang.String style = OneOrMoreChars(
 							Character::isLetterOrDigit, "style");
-					patternParser.whiteSpace();
+					whiteSpace();
 					DateTimeFormatter formatter = getFormatters().get(style);
 					if (formatter == null) {
 						throw new RuntimeException("unknown style "

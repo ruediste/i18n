@@ -45,4 +45,8 @@ public abstract class FormatTypeParserBase extends DefaultParser implements
 						.stream().collect(joining())
 				+ Optional(() -> String("'")).orElse("");
 	}
+
+	public void whiteSpace() {
+		patternParser.whiteSpace();
+	}
 }

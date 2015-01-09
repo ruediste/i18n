@@ -18,8 +18,8 @@ public class FormatNode extends ArgumentNode {
 
 	@Override
 	public String format(FormattingContext ctx) {
-		Object arg = ctx.arguments.get(argumentName);
-		return formatFactory.apply(ctx.locale).format(prepareArg(arg));
+		Object arg = ctx.getArgument(argumentName);
+		return formatFactory.apply(ctx.getLocale()).format(prepareArg(arg));
 	}
 
 	/**

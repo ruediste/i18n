@@ -2,16 +2,13 @@ package com.github.ruediste1.i18n.messageFormat;
 
 import static java.util.stream.Collectors.joining;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import com.github.ruediste1.i18n.messageFormat.ast.ArgumentNode;
-import com.github.ruediste1.i18n.messageFormat.ast.LiteralNode;
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.ast.SequenceNode;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParser;
 import com.github.ruediste1.lambdaPegParser.DefaultParser;
@@ -27,37 +24,58 @@ public class PatternParser extends DefaultParser {
 
 	// @formatter:off
 	
-	public Node fullPattern(){
-		Node result = pattern();
+	/**
+	 * <pre>
+	 * fullPattern = pattern EOI
+	 * </pre>
+	 */
+	public PatternNode fullPattern(){
+		PatternNode result = pattern();
 		EOI();
 		return result;
 	}
-	public Node pattern() {
-		return pattern(null, Collections.emptySet());
+
+	/**
+	 * <pre>
+	 * pattern() = pattern(null)
+	 * </pre>
+	 */
+	public PatternNode pattern() {
+		return pattern(null);
 	}
 
-	public Node pattern(Supplier<Node> additionalChoice,
-			Set<Integer> additionalStopChars) {
-		return new SequenceNode(ZeroOrMore(() -> FirstOf(
+	/**
+	 * <pre>
+	 * pattern = (additionalChoice | placeHolder | literalChar)*
+	 * </pre>
+	 */
+	public PatternNode pattern(Supplier<Object> additionalChoice) {
+		return  SequenceNode.fromObjects(this.ZeroOrMore(() -> FirstOf(
 				additionalChoice, 
 				() -> placeHolder(),
-				() -> literal(additionalStopChars))));
+				() -> literalChar())));
 	}
 
-	public LiteralNode literal(Set<Integer> additionalStopChars) {
-		return new LiteralNode(OneOrMore(
-				() -> FirstOf(
+	/**
+	 * <pre>
+	 * literalChar = '$'. | ./'}'
+	 * </pre>
+	 */
+	public String literalChar() {
+		return  FirstOf(
 						() -> {
 							String("$");
 							return AnyChar();
 						},
-						() -> Char(
-								cp -> cp != '{'
-										&& !additionalStopChars.contains(cp),
-								"literal"))).stream().collect(joining()));
+						() -> NoneOf("}"));
 	}
-
-	public Node placeHolder() {
+	
+	/**
+	 * <pre>
+	 * placeHolder = '{' identifier (',' identifier style)?
+	 * </pre>
+	 */
+	public PatternNode placeHolder() {
 		String("{");
 		whiteSpace();
 		String argumentName = identifier();
@@ -70,12 +88,12 @@ public class PatternParser extends DefaultParser {
 			return result;
 		}).orElse(null);
 
-		Node result;
+		PatternNode result;
 		if (type == null) {
 			result = new ArgumentNode(argumentName) {
 				@Override
 				public String format(FormattingContext ctx) {
-					return Objects.toString(ctx.arguments.get(argumentName));
+					return Objects.toString(ctx.getArgument(argumentName));
 				}
 			};
 		} else {

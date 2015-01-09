@@ -1,7 +1,7 @@
 package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import com.github.ruediste1.i18n.messageFormat.PatternParser;
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 
 /**
  * Interface for parsers parsing a placeholder type
@@ -13,7 +13,7 @@ public interface FormatTypeParser {
 	 * @param argumentName
 	 *            name of the argument
 	 */
-	Node style(String argumentName);
+	PatternNode style(String argumentName);
 
 	void setPatternParser(PatternParser patternParser);
 }

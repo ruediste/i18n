@@ -4,13 +4,12 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import com.github.ruediste1.i18n.messageFormat.FormattingContext;
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.ibm.icu.text.NumberFormat;
 import com.ibm.icu.text.PluralRules;
@@ -37,13 +36,13 @@ public class PluralParser extends FormatTypeParserBase {
 	public PluralNode style(String argumentName) {
 		PluralNode result = new PluralNode(argumentName);
 		String(",");
-		patternParser.whiteSpace();
+		whiteSpace();
 		OneOrMore(() -> {
 			String selector = selector();
 			String("{");
-			Node node = subPattern(argumentName);
+			PatternNode node = subPattern(argumentName);
 			String("}");
-			patternParser.whiteSpace();
+			whiteSpace();
 			result.addRule(selector, node);
 		});
 		return result;
@@ -52,29 +51,26 @@ public class PluralParser extends FormatTypeParserBase {
 	public String selector() {
 		String result = Optional(() -> {
 			String("=");
-			patternParser.whiteSpace();
+			whiteSpace();
 			return "=";
 		}).orElse("");
 		result += OneOrMoreChars(Character::isLetterOrDigit, "argument name");
-		patternParser.whiteSpace();
+		whiteSpace();
 		return result;
 	}
 
-	public Node subPattern(String argumentName) {
-		Set<Integer> stopChars = new HashSet<>();
-		stopChars.add((int) '#');
-		stopChars.add((int) '}');
+	public PatternNode subPattern(String argumentName) {
 
 		return patternParser.pattern(() -> {
 			String("#");
 			return new HashNode(argumentName);
-		}, stopChars);
+		});
 	}
 
-	public static class PluralNode implements Node {
+	public static class PluralNode extends PatternNode {
 
-		public Map<Double, Node> explicitRules = new HashMap<>();
-		public Map<String, Node> keywordRules = new HashMap<>();
+		public Map<Double, PatternNode> explicitRules = new HashMap<>();
+		public Map<String, PatternNode> keywordRules = new HashMap<>();
 		private String argumentName;
 
 		public PluralNode(String argumentName) {
@@ -84,7 +80,7 @@ public class PluralParser extends FormatTypeParserBase {
 
 		@Override
 		public String format(FormattingContext ctx) {
-			Object numberArg = ctx.arguments.get(argumentName);
+			Object numberArg = ctx.getArgument(argumentName);
 			if (!(numberArg instanceof Number)) {
 				throw new IllegalArgumentException("'" + numberArg
 						+ "' is not a Number");
@@ -94,16 +90,16 @@ public class PluralParser extends FormatTypeParserBase {
 
 			// try explicit rules
 			{
-				Node node = explicitRules.get(number);
+				PatternNode node = explicitRules.get(number);
 				if (node != null) {
 					return node.format(ctx);
 				}
 			}
 
 			// try keyword rules
-			PluralRules pluralRules = PluralRules.forLocale(ctx.locale);
+			PluralRules pluralRules = PluralRules.forLocale(ctx.getLocale());
 			String keyword = pluralRules.select(number);
-			Node node = keywordRules.get(keyword);
+			PatternNode node = keywordRules.get(keyword);
 			if (node == null) {
 				node = keywordRules.get(PluralRules.KEYWORD_OTHER);
 			}
@@ -124,7 +120,7 @@ public class PluralParser extends FormatTypeParserBase {
 					.collect(toSet());
 		}
 
-		public void addRule(String selector, Node node) {
+		public void addRule(String selector, PatternNode node) {
 			if (selector.startsWith("=")) {
 				explicitRules.put(Double.valueOf(selector.substring(1)), node);
 			} else {
@@ -133,7 +129,7 @@ public class PluralParser extends FormatTypeParserBase {
 		}
 	}
 
-	public static class HashNode implements Node {
+	public static class HashNode extends PatternNode {
 		private java.lang.String argumentName;
 
 		public HashNode(String argumentName) {
@@ -142,8 +138,8 @@ public class PluralParser extends FormatTypeParserBase {
 
 		@Override
 		public String format(FormattingContext ctx) {
-			return NumberFormat.getNumberInstance(ctx.locale).format(
-					ctx.arguments.get(argumentName));
+			return NumberFormat.getNumberInstance(ctx.getLocale()).format(
+					ctx.getArgument(argumentName));
 		}
 
 		@Override

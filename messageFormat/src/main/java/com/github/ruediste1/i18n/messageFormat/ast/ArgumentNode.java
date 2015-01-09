@@ -3,7 +3,7 @@ package com.github.ruediste1.i18n.messageFormat.ast;
 import java.util.Collections;
 import java.util.Set;
 
-public abstract class ArgumentNode implements Node {
+public abstract class ArgumentNode extends PatternNode {
 
 	protected String argumentName;
 

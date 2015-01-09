@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.function.Function;
 
 import com.github.ruediste1.i18n.messageFormat.ast.FormatNode;
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.ibm.icu.text.DecimalFormat;
 import com.ibm.icu.text.DecimalFormatSymbols;
@@ -17,11 +17,11 @@ public class NumberParser extends FormatTypeParserBase {
 	}
 
 	@Override
-	public Node style(java.lang.String argumentName) {
+	public PatternNode style(java.lang.String argumentName) {
 		Function<Locale, NumberFormat> formatFactory = Optional(
 				() -> {
 					String(",");
-					patternParser.whiteSpace();
+					whiteSpace();
 					Function<Locale, NumberFormat> result = FirstOf(() -> {
 						String("integer");
 						return l -> NumberFormat.getIntegerInstance(l);
@@ -36,7 +36,7 @@ public class NumberParser extends FormatTypeParserBase {
 						return l -> new DecimalFormat(pattern,
 								DecimalFormatSymbols.getInstance(l));
 					});
-					patternParser.whiteSpace();
+					whiteSpace();
 					return result;
 				}).orElse(l -> NumberFormat.getInstance(l));
 		return new FormatNode(argumentName, formatFactory);

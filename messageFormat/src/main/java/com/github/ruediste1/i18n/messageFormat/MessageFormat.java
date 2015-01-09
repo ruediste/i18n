@@ -1,10 +1,18 @@
 package com.github.ruediste1.i18n.messageFormat;
 
+import static java.util.stream.Collectors.toMap;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.BiFunction;
 
-import com.github.ruediste1.i18n.messageFormat.ast.Node;
+import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateParser;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateTimeParser;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateTimePatternParser;
@@ -16,19 +24,280 @@ import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.lambdaPegParser.ParserFactory;
 import com.github.ruediste1.lambdaPegParser.Tracer;
 
+/**
+ * Takes a set of objects, formats them, then inserts the formatted strings into
+ * the pattern at the appropriate places. By localizing the pattern strings,
+ * complex messages in different languages can easily be created.
+ * 
+ * <p>
+ * Pattern Syntax <br/>
+ * 
+ * <pre>
+ * pattern      = (placeholder | literalChar)*
+ * literalChar  = '$' . | . / '}'
+ * placeholder  = '{' argumentName ( ',' formatType style )? '}'
+ * argumentName = identifier
+ * formatType   = identifier
+ * </pre>
+ * 
+ * </p>
+ * 
+ * <p>
+ * The set of supported formatTypes is specified upon instantiation. The default
+ * set can be retrieved using the {@link #defaultFormatTypeParsers()} method.
+ * This map can be modified freely.
+ * </p>
+ * 
+ * <p>
+ * An additional extension point is the argument preparation function. If
+ * specified, all argument values are passed through the function before further
+ * treatment. This is especially useful to transform some unconventional objects
+ * into a form known to the library.
+ * </p>
+ * 
+ * The following table shows the default parsers provided. The argument object
+ * is noted as {@code arg}
+ * <table border=1 >
+ * <tr>
+ * <th id="ft" class="TableHeadingColor">FormatType
+ * <th id="fs" class="TableHeadingColor">FormatStyle
+ * <th id="sc" class="TableHeadingColor">Formatting used
+ * <tr>
+ * <td headers="ft"><i>(none)</i>
+ * <td headers="fs"><i>(none)</i>
+ * <td headers="sc">
+ * <code>{@link String#valueOf(Object) String.valueOf(arg)}</code>
+ * <tr>
+ * <td headers="ft" rowspan=5><code>number</code>
+ * <td headers="fs"><i>(none)</i>
+ * <td headers="sc">{@link NumberFormat#getInstance(Locale)
+ * NumberFormat.getInstance}{@code (getLocale())}
+ * <tr>
+ * <td headers="fs"><code>integer</code>
+ * <td headers="sc">{@link NumberFormat#getIntegerInstance(Locale)
+ * NumberFormat.getIntegerInstance}{@code (getLocale())}
+ * <tr>
+ * <td headers="fs"><code>currency</code>
+ * <td headers="sc">{@link NumberFormat#getCurrencyInstance(Locale)
+ * NumberFormat.getCurrencyInstance}{@code (getLocale())}
+ * <tr>
+ * <td headers="fs"><code>percent</code>
+ * <td headers="sc">{@link NumberFormat#getPercentInstance(Locale)
+ * NumberFormat.getPercentInstance}{@code (getLocale())}
+ * <tr>
+ * <td headers="fs"><i>pattern</i>
+ * <td headers="sc">{@code new}
+ * {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols)
+ * DecimalFormat}{@code (pattern,}
+ * {@link DecimalFormatSymbols#getInstance(Locale)
+ * DecimalFormatSymbols.getInstance}{@code (getLocale()))}
+ * <tr>
+ * <td headers="ft" rowspan=9><code>date</code>
+ * 
+ * <td headers="fs"><i>(none)</i>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDate}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>short</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDate}{@code (}{@link FormatStyle#SHORT}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>medium</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDate}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>long</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDate}{@code (}{@link FormatStyle#LONG} {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>full</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDate}{@code (}{@link FormatStyle#FULL} {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>iso</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_DATE}
+ * <tr>
+ * <td headers="fs"><code>isoLocal</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_LOCAL_DATE}
+ * <tr>
+ * <td headers="fs"><code>isoOffset</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_OFFSET_DATE}
+ * <tr>
+ * <td headers="fs"><code>isoWeek</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_WEEK_DATE}
+ * 
+ * <tr>
+ * <td headers="ft" rowspan=1><code>dateTimePattern</code>
+ * 
+ * <td headers="fs"><i>pattern</i>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofPattern(String)
+ * DateTimeFormatter.ofPattern(pattern)}
+ * 
+ * <tr>
+ * <td headers="ft" rowspan=8><code>time</code>
+ * 
+ * <td headers="fs"><i>(none)</i>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedTime(FormatStyle)
+ * DateTimeFormatter.ofLocalizedTime}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>short</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedTime}{@code (}{@link FormatStyle#SHORT}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>medium</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedTime}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>long</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedTime}{@code (}{@link FormatStyle#LONG} {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>full</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedTime}{@code (}{@link FormatStyle#FULL} {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>iso</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_TIME}
+ * <tr>
+ * <td headers="fs"><code>isoLocal</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_LOCAL_TIME}
+ * <tr>
+ * <td headers="fs"><code>isoOffset</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_OFFSET_TIME}
+ * 
+ * <tr>
+ * <td headers="ft" rowspan=11><code>dateTime</code>
+ * 
+ * <td headers="fs"><i>(none)</i>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDateTime(FormatStyle)
+ * DateTimeFormatter.ofLocalizedDateTime}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>short</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDateTime}{@code (}{@link FormatStyle#SHORT}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>medium</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDateTime}{@code (}{@link FormatStyle#MEDIUM}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>long</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDateTime}{@code (}{@link FormatStyle#LONG}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>full</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle)
+ * DateTimeFormatter.ofLocalizedDateTime}{@code (}{@link FormatStyle#FULL}
+ * {@code )}
+ * 
+ * <tr>
+ * <td headers="fs"><code>iso</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_DATE_TIME}
+ * <tr>
+ * <td headers="fs"><code>isoLocal</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME}
+ * <tr>
+ * <td headers="fs"><code>isoOffset</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME}
+ * 
+ * <tr>
+ * <td headers="fs"><code>isoZoned</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_ZONED_DATE_TIME}
+ * 
+ * <tr>
+ * <td headers="fs"><code>rfc1123</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#RFC_1123_DATE_TIME}
+ * 
+ * <tr>
+ * <td headers="fs"><code>isoInstant</code>
+ * <td headers="sc">
+ * {@link DateTimeFormatter#ISO_INSTANT}
+ * 
+ * <tr>
+ * <td headers="ft"><code>plural</code>
+ * <td headers="fs"><i>pattern</i>
+ * <td headers="sc">see {@link PluralParser}
+ * </table>
+ * 
+ */
 public class MessageFormat {
 
 	public static boolean trace;
 
-	private Map<String, Class<? extends FormatTypeParser>> handlers;
+	private final Map<String, Class<? extends FormatTypeParser>> formatTypeParsers;
+	private final BiFunction<Object, ? super Locale, Object> argumentPreparationFunction;
 
 	public MessageFormat() {
-		this(defaultHandlers());
+		this(defaultFormatTypeParsers(), (a, b) -> a);
 	}
 
-	public MessageFormat(
-			Map<String, Class<? extends FormatTypeParser>> handlers) {
-		this.handlers = handlers;
+	private MessageFormat(
+			Map<String, Class<? extends FormatTypeParser>> formatTypeParsers,
+			BiFunction<Object, ? super Locale, Object> argumentPreparationFunction) {
+		this.formatTypeParsers = new HashMap<>(formatTypeParsers);
+		this.argumentPreparationFunction = argumentPreparationFunction;
+	}
+
+	public MessageFormat withFormatTypeParsers(
+			Map<String, Class<? extends FormatTypeParser>> formatTypeParsers) {
+		return new MessageFormat(new HashMap<>(formatTypeParsers),
+				argumentPreparationFunction);
+	}
+
+	public MessageFormat withArgumentPreparationFunction(
+			BiFunction<Object, ? super Locale, Object> function) {
+		return new MessageFormat(formatTypeParsers, function);
 	}
 
 	public String format(String pattern, Map<String, Object> arguments,
@@ -38,7 +307,8 @@ public class MessageFormat {
 			new Tracer(ctx, System.out);
 		}
 		PatternParser parser = ParserFactory.create(PatternParser.class, ctx);
-		handlers.entrySet()
+		formatTypeParsers
+				.entrySet()
 				.stream()
 				.forEach(
 						e -> {
@@ -47,14 +317,21 @@ public class MessageFormat {
 							tmp.setPatternParser(parser);
 							parser.getFormatParsers().put(e.getKey(), tmp);
 						});
-		Node node = parser.fullPattern();
-		FormattingContext fCtx = new FormattingContext();
-		fCtx.locale = locale;
-		fCtx.arguments = arguments;
+		PatternNode node = parser.fullPattern();
+		FormattingContext fCtx = new FormattingContext(locale, arguments
+				.entrySet()
+				.stream()
+				.collect(
+						toMap(e -> e.getKey(),
+								e -> argumentPreparationFunction.apply(
+										e.getValue(), locale))));
 		return node.format(fCtx);
 	}
 
-	public static Map<String, Class<? extends FormatTypeParser>> defaultHandlers() {
+	/**
+	 * Return a new map containing the default format
+	 */
+	public static Map<String, Class<? extends FormatTypeParser>> defaultFormatTypeParsers() {
 		HashMap<String, Class<? extends FormatTypeParser>> result = new HashMap<>();
 		result.put("plural", PluralParser.class);
 		result.put("number", NumberParser.class);

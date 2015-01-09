@@ -38,6 +38,13 @@ public class DateParserTest extends FormatTypeParserTestBase {
 						map("param", ZonedDateTime.of(
 								LocalDateTime.of(2014, 1, 1, 10, 01),
 								ZoneId.of("Z"))), Locale.ENGLISH));
+		assertEquals(
+				"02.01.14",
+				format.format(
+						"{param, date, short}",
+						map("param", ZonedDateTime.of(
+								LocalDateTime.of(2014, 1, 2, 10, 01),
+								ZoneId.of("Z"))), Locale.GERMAN));
 	}
 
 }

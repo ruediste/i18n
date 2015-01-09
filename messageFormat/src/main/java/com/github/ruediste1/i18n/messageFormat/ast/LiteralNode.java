@@ -5,9 +5,9 @@ import java.util.Set;
 
 import com.github.ruediste1.i18n.messageFormat.FormattingContext;
 
-public class LiteralNode implements Node {
+public class LiteralNode extends PatternNode {
 
-	private String literal;
+	private final String literal;
 
 	public LiteralNode(String literal) {
 		this.literal = literal;
@@ -21,6 +21,10 @@ public class LiteralNode implements Node {
 	@Override
 	public Set<String> argumentNames() {
 		return Collections.emptySet();
+	}
+
+	public String getLiteral() {
+		return literal;
 	}
 
 }

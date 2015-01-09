@@ -20,7 +20,7 @@ public class DateTimeNode extends ArgumentNode {
 
 	@Override
 	public java.lang.String format(FormattingContext ctx) {
-		Object arg = ctx.arguments.get(argumentName);
+		Object arg = ctx.getArgument(argumentName);
 		TemporalAccessor temporal;
 		if (arg instanceof TemporalAccessor)
 			temporal = (TemporalAccessor) arg;
@@ -34,7 +34,7 @@ public class DateTimeNode extends ArgumentNode {
 		else
 			throw new RuntimeException("Cannot format given Object as Date: "
 					+ arg);
-		return formatter.format(temporal);
+		return formatter.withLocale(ctx.getLocale()).format(temporal);
 	}
 
 }

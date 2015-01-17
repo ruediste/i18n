@@ -7,8 +7,10 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -17,8 +19,8 @@ import javax.inject.Inject;
 import com.github.ruediste.c3java.properties.PropertyDeclaration;
 import com.github.ruediste.c3java.properties.PropertyUtil;
 import com.github.ruediste1.i18n.StringUtil;
-import com.github.ruediste1.i18n.TranslatedString;
 import com.github.ruediste1.i18n.TStringResolver;
+import com.github.ruediste1.i18n.TranslatedString;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Joiner;
 
@@ -26,7 +28,7 @@ public class LabelUtil {
 
 	@Inject
 	PropertyUtil reflectionUtil;
-	
+
 	@Inject
 	TStringResolver resolver;
 
@@ -40,11 +42,11 @@ public class LabelUtil {
 	/**
 	 * Get the label of a certain property in a type
 	 */
-	public TranslatedString getPropertyLabel(Class<?> type, String propertyName,
-			String variant) {
+	public TranslatedString getPropertyLabel(Class<?> type,
+			String propertyName, String variant) {
 		// find property
-		PropertyDeclaration property = reflectionUtil.getPropertyIntroduction(type,
-				propertyName);
+		PropertyDeclaration property = reflectionUtil.getPropertyIntroduction(
+				type, propertyName);
 		if (property == null) {
 			throw new IllegalArgumentException("No property " + propertyName
 					+ " found in " + type);
@@ -74,7 +76,8 @@ public class LabelUtil {
 		}
 
 		// build and return TString
-		return new TranslatedString(resolver,
+		return new TranslatedString(
+				resolver,
 				property.getDeclaringType().getName() + "." + propertyName
 						+ (variant.isEmpty() ? "" : "." + variant),
 				calculatePropertyFallback(type, propertyName, variant, property));
@@ -104,8 +107,11 @@ public class LabelUtil {
 					+ Joiner.on(", ").join(membersLabeled.variants()) + ">");
 		}
 
-		return new TranslatedString(resolver, member.getDeclaringClass().getName() + "."
-				+ member.name() + (variant.isEmpty() ? "" : "." + variant),
+		return new TranslatedString(resolver, member.getDeclaringClass()
+				.getName()
+				+ "."
+				+ member.name()
+				+ (variant.isEmpty() ? "" : "." + variant),
 				calculateEnumMemberFallback(member, variant));
 	}
 
@@ -127,8 +133,9 @@ public class LabelUtil {
 			return labels.get(0);
 		}
 
-		return StringUtil.insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE.to(
-		CaseFormat.UPPER_CAMEL, member.name()));
+		return StringUtil
+				.insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE
+						.to(CaseFormat.UPPER_CAMEL, member.name()));
 	}
 
 	protected List<String> extractLabels(AnnotatedElement annotated,
@@ -190,6 +197,11 @@ public class LabelUtil {
 				calculateTypeFallback(type, variant));
 	}
 
+	/**
+	 * Iterate over all annotations having the meta-annotation
+	 * {@link LabelVariant}, filter those matching the specified variant and
+	 * extract their value.
+	 */
 	public static Stream<String> extractLabelsOfVariantAnnotations(
 			AnnotatedElement annotated, String variant) {
 		return Arrays
@@ -214,7 +226,8 @@ public class LabelUtil {
 	protected String calculateTypeFallback(Class<?> type, String variant) {
 		List<String> annotations = extractLabels(type, variant);
 		if (annotations.isEmpty()) {
-			return StringUtil.insertSpacesIntoCamelCaseString(type.getSimpleName());
+			return StringUtil.insertSpacesIntoCamelCaseString(type
+					.getSimpleName());
 		}
 
 		if (annotations.size() == 1) {
@@ -256,14 +269,14 @@ public class LabelUtil {
 			String location, ArrayList<String> labels,
 			ArrayList<String> labelLocations, String variant) {
 		if (annotated != null) {
-			List<String> foundLabels = extractLabels(annotated, variant);
-			if (foundLabels.size() > 1) {
+			List<String> labelsFound = extractLabels(annotated, variant);
+			if (labelsFound.size() > 1) {
 				throw new RuntimeException(
 						"More than one Label annotation found on " + annotated
 								+ " for variant " + variant);
-			} else if (foundLabels.size() == 1) {
+			} else if (labelsFound.size() == 1) {
 				labelLocations.add(location);
-				labels.add(foundLabels.get(0));
+				labels.add(labelsFound.get(0));
 			}
 		}
 	}
@@ -273,7 +286,79 @@ public class LabelUtil {
 	 * customize
 	 */
 	protected String calculateFallbackFromPropertyName(String name) {
-		return StringUtil.insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(
-		CaseFormat.UPPER_CAMEL, name));
+		return StringUtil
+				.insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(
+						CaseFormat.UPPER_CAMEL, name));
+	}
+
+	/**
+	 * Return all labels defined on a type like type label, property labels or
+	 * enum member labels.
+	 */
+	public List<TranslatedString> getLabelsDefinedOn(Class<?> type) {
+		ArrayList<TranslatedString> result = new ArrayList<>();
+		result.addAll(getTypeLabelsOf(type));
+		result.addAll(getPropertyLabelsOf(type));
+		result.addAll(getEnumMemberLabelsOf(type));
+		return result;
+	}
+
+	public Collection<String> availableEnumMemberLabelVariants(Class<?> type) {
+		ArrayList<String> result = new ArrayList<>();
+		if (!type.isEnum())
+			return result;
+		MembersLabeled membersLabeled = type
+				.getAnnotation(MembersLabeled.class);
+		if (membersLabeled == null)
+			return result;
+		result.add("");
+		result.addAll(Arrays.asList(membersLabeled.variants()));
+		return result;
+	}
+
+	public Collection<TranslatedString> getEnumMemberLabelsOf(Class<?> type) {
+		Collection<TranslatedString> result = new ArrayList<>();
+		for (String variant : availableEnumMemberLabelVariants(type)) {
+			for (Object value : type.getEnumConstants()) {
+				result.add(getEnumMemberLabel((Enum<?>) value, variant));
+			}
+		}
+
+		return result;
+	}
+
+	public Collection<TranslatedString> getPropertyLabelsOf(Class<?> type) {
+		Collection<TranslatedString> result = new ArrayList<>();
+		for (PropertyDeclaration property : reflectionUtil
+				.getPropertyIntroductionMap(type).values()) {
+			PropertiesLabeled propertiesLabeled = property.getDeclaringType()
+					.getAnnotation(PropertiesLabeled.class);
+			if (propertiesLabeled == null)
+				continue;
+			result.add(getPropertyLabel(type, property.getName()));
+			for (String variant : propertiesLabeled.variants()) {
+				result.add(getPropertyLabel(type, property.getName(), variant));
+			}
+		}
+		return result;
+	}
+
+	public Collection<TranslatedString> getTypeLabelsOf(Class<?> type) {
+		Collection<TranslatedString> result = new ArrayList<>();
+		if (type.isAnnotationPresent(Labeled.class))
+			for (String variant : availableTypeLabelVariants(type)) {
+				result.add(getTypeLabel(type, variant));
+			}
+		return result;
+	}
+
+	public Properties toProperties(Collection<TranslatedString> strings) {
+		Properties result = new Properties();
+		strings.stream()
+				.sorted((a, b) -> a.getResourceKey().compareTo(
+						b.getResourceKey())).forEach(string -> {
+					result.put(string.getResourceKey(), string.getFallback());
+				});
+		return result;
 	}
 }

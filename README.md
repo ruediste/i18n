@@ -1,7 +1,7 @@
 
 # i18n
 
-This project provides utility classes for internationalization especially useful if you are using Domain Driven Design. The main idea is to associate all localized strings with some java element and use references to the java elements to retrieve the strings. More specifically, a label can be bound to each
+This project provides utility classes for internationalization especially useful if you are using Domain Driven Design. The main idea is to associate each localized strings with a java element and use references to the java elements to retrieve the strings. More specifically, a label can be bound to each
 
 * Type
 * Property
@@ -9,9 +9,9 @@ This project provides utility classes for internationalization especially useful
 
 In addition, message patterns are bound to message interfaces to allow parameterized string generation.
 
-Care has been taken to allow for static extraction of all label keys, which allows to check if the keys present in some resource files match the keys used by the application.
+Care has been taken to allow for static extraction of all definded localized keys, which allows to check if the keys present in some resource files match the keys used by the application.
 
-In addition, the fallback translation can be specified directly in code via annotations. This allows the quick addition of labels and serves documentation purposes.
+In addition, a fallback translation can be specified directly in code via annotations. This allows simple addition of labels during development, serves documentation purposes and helps translators as example.
 
 ## Translated Strings
 Translated strings are are represented by **LString**s. Their only capability is to resolve themselves against a **Locale**, resulting in a string representation.

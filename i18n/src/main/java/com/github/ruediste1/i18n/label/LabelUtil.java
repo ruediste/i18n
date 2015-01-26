@@ -303,6 +303,10 @@ public class LabelUtil {
 		return result;
 	}
 
+	/**
+	 * Return the variants available for the members of the specified enum. If
+	 * the type is no enum, an empty collection is returned
+	 */
 	public Collection<String> availableEnumMemberLabelVariants(Class<?> type) {
 		ArrayList<String> result = new ArrayList<>();
 		if (!type.isEnum())

@@ -11,7 +11,9 @@ In addition, message patterns are bound to message interfaces to allow parameter
 
 Care has been taken to allow for static extraction of all definded localized keys, which allows to check if the keys present in some resource files match the keys used by the application.
 
-In addition, a fallback translation can be specified directly in code via annotations. This allows simple addition of labels during development, serves documentation purposes and helps translators as example.
+A fallback translation can be specified directly in code via annotations. This allows simple addition of labels during development, serves documentation purposes and helps translators as example.
+
+[![Build Status](https://travis-ci.org/ruediste/i18n.svg)](https://travis-ci.org/ruediste/i18n)
 
 ## Translated Strings
 Translated strings are are represented by **LString**s. Their only capability is to resolve themselves against a **Locale**, resulting in a string representation.

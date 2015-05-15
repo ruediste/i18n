@@ -13,8 +13,6 @@ Care has been taken to allow for static extraction of all definded localized key
 
 A fallback translation can be specified directly in code via annotations. This allows simple addition of labels during development, serves documentation purposes and helps translators as example.
 
-[![Build Status](https://travis-ci.org/ruediste/i18n.svg)](https://travis-ci.org/ruediste/i18n)
-
 ## Translated Strings
 Translated strings are are represented by **LString**s. Their only capability is to resolve themselves against a **Locale**, resulting in a string representation.
 

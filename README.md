@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/ruediste/i18n.svg?branch=master)](https://travis-ci.org/ruediste/i18n)
 
 # i18n
 

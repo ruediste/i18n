@@ -1,4 +1,4 @@
-package com.github.ruediste1.i18n;
+package com.github.ruediste1.i18n.lString;
 
 import java.util.Collections;
 import java.util.HashMap;

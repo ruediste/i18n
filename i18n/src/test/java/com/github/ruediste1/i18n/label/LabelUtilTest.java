@@ -15,13 +15,13 @@ import java.util.Collection;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.ruediste1.i18n.lString.TStringResolver;
 import com.github.ruediste1.i18n.lString.TranslatedString;
+import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
 
 public class LabelUtilTest {
 
     LabelUtil util;
-    TStringResolver resolver;
+    TranslatedStringResolver resolver;
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE })
@@ -31,9 +31,12 @@ public class LabelUtilTest {
         String value();
     }
 
-    @Labeled
     @Short("myShort")
     private static class TestImplicitelyLabeled {
+
+    }
+
+    private static class TestTypeLabeledInherited {
 
     }
 
@@ -83,7 +86,7 @@ public class LabelUtilTest {
 
     @Before
     public void setup() {
-        util = new LabelUtil();
+        util = new LabelUtil(null);
     }
 
     @Test
@@ -140,16 +143,22 @@ public class LabelUtilTest {
 
     @Test
     public void testGetTypeLabel() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass", "Test Class"),
-                util.getTypeLabel(TestClass.class));
+        assertEquals(new TranslatedString(resolver, TestClass.class.getName(),
+                "Test Class"), util.getTypeLabel(TestClass.class));
     }
 
     @Test
     public void testGetTypeLabelImplicitely() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestImplicitelyLabeled.short", "myShort"),
+        assertEquals(new TranslatedString(resolver,
+                TestImplicitelyLabeled.class.getName() + ".short", "myShort"),
                 util.getTypeLabel(TestImplicitelyLabeled.class, "short"));
+    }
+
+    @Test
+    public void testGetTypeLabelInherited() throws Exception {
+        assertEquals(new TranslatedString(resolver,
+                TestImplicitelyLabeled.class.getName() + ".short", "myShort"),
+                util.getTypeLabel(TestTypeLabeledInherited.class, "short"));
     }
 
     @Test(expected = RuntimeException.class)
@@ -178,8 +187,8 @@ public class LabelUtilTest {
 
     @Test
     public void testGetTypeLabelVariantNoLabel() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.foo1", "Test Class"),
+        assertEquals(new TranslatedString(resolver, TestClass.class.getName()
+                + ".foo1", "Test Class"),
                 util.getTypeLabel(TestClass.class, "foo1"));
     }
 

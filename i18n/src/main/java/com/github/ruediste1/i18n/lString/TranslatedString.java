@@ -17,13 +17,13 @@ import com.google.common.base.Objects;
 public class TranslatedString implements LString{
 	final private String resourceKey;
 	private final String fallback;
-	private final TStringResolver resolver;
+	private final TranslatedStringResolver resolver;
 
-	public TranslatedString(TStringResolver resolver, String resourceKey) {
+	public TranslatedString(TranslatedStringResolver resolver, String resourceKey) {
 		this(resolver, resourceKey, null);
 	}
 
-	public TranslatedString(TStringResolver resolver, String resourceKey, String fallback) {
+	public TranslatedString(TranslatedStringResolver resolver, String resourceKey, String fallback) {
 		this.resolver = resolver;
 		this.resourceKey = resourceKey;
 		this.fallback = fallback;

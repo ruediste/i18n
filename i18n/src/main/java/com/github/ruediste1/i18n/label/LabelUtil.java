@@ -8,8 +8,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -17,20 +19,94 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.github.ruediste.c3java.linearization.JavaC3;
 import com.github.ruediste.c3java.properties.PropertyDeclaration;
 import com.github.ruediste.c3java.properties.PropertyInfo;
 import com.github.ruediste.c3java.properties.PropertyPath;
 import com.github.ruediste.c3java.properties.PropertyUtil;
 import com.github.ruediste1.i18n.lString.StringUtil;
-import com.github.ruediste1.i18n.lString.TStringResolver;
 import com.github.ruediste1.i18n.lString.TranslatedString;
+import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 
 public class LabelUtil {
 
+    private TranslatedStringResolver resolver;
+
+    private static class TypeLabel {
+        String variant;
+        Class<?> definingClass;
+        String fallback;
+
+        TypeLabel(String variant, Class<?> definingClass, String fallback) {
+            super();
+            this.variant = variant;
+            this.definingClass = definingClass;
+            this.fallback = fallback;
+        }
+    }
+
+    private Map<String, TypeLabel> getTypeLabels(Class<?> cls) {
+        Map<String, TypeLabel> result = getTypeLabelsNoInherit(cls);
+        if (!result.isEmpty())
+            return result;
+        for (Class<?> superClass : Iterables.skip(JavaC3.allSuperclasses(cls),
+                1)) {
+            result = getTypeLabelsNoInherit(superClass);
+            if (!result.isEmpty())
+                return result;
+        }
+        throw new RuntimeException("Missing @Label or @Labeled annotation on "
+                + cls + " and all it's ancestors");
+    }
+
+    private Map<String, TypeLabel> getTypeLabelsNoInherit(Class<?> cls) {
+        Map<String, TypeLabel> labels = new HashMap<>();
+
+        // add variants from Labeled
+        {
+            Labeled labeled = cls.getAnnotation(Labeled.class);
+            if (labeled != null) {
+                labels.put("", new TypeLabel("", cls, null));
+                Arrays.stream(labeled.variants()).forEach(
+                        v -> labels.put(v, new TypeLabel(v, cls, null)));
+            }
+        }
+
+        // add or update variants from Label
+        Arrays.stream(cls.getAnnotationsByType(Label.class)).forEach(
+                l -> {
+                    labels.computeIfAbsent(l.variant(), x -> new TypeLabel(x,
+                            cls, null)).fallback = l.value();
+                });
+
+        // add variants from variant annotations
+        for (Annotation a : cls.getAnnotations()) {
+            LabelVariant labelVariant = a.annotationType().getAnnotation(
+                    LabelVariant.class);
+            if (labelVariant != null) {
+                String variant = labelVariant.value();
+                labels.computeIfAbsent(variant, x -> new TypeLabel(variant,
+                        cls, null)).fallback = getLabelOfVariantAnnotation(a);
+            }
+        }
+
+        // calculate fallbacks
+        labels.values()
+                .stream()
+                .filter(l -> l.fallback == null)
+                .forEach(
+                        l -> l.fallback = calculateTypeFallbackNew(
+                                l.definingClass, l.variant));
+        return labels;
+    }
+
     @Inject
-    TStringResolver resolver;
+    public LabelUtil(TranslatedStringResolver resolver) {
+        this.resolver = resolver;
+    }
 
     /**
      * Get the label of a certain property in a type in the default variant
@@ -206,11 +282,15 @@ public class LabelUtil {
      */
     public Set<String> availableTypeLabelVariants(Class<?> type) {
         Set<String> result = new HashSet<String>();
-        result.add("");
 
         // add variants from Labeled
-        Arrays.stream(type.getAnnotation(Labeled.class).variants()).forEach(
-                result::add);
+        {
+            Labeled labeled = type.getAnnotation(Labeled.class);
+            if (labeled != null) {
+                Arrays.stream(labeled.variants()).forEach(result::add);
+                result.add("");
+            }
+        }
 
         // add variants from Label
         Arrays.stream(type.getAnnotationsByType(Label.class))
@@ -229,21 +309,17 @@ public class LabelUtil {
     }
 
     public TranslatedString getTypeLabel(Class<?> type, String variant) {
-        Labeled labeled = type.getAnnotation(Labeled.class);
-        if (labeled == null) {
-            throw new RuntimeException("Missing Labeled annotation on " + type);
-        }
+        Map<String, TypeLabel> labels = getTypeLabels(type);
+        TypeLabel typeLabel = labels.get(variant);
 
-        Set<String> availableVariants = availableTypeLabelVariants(type);
-        if (!availableVariants.contains(variant)) {
+        if (typeLabel == null) {
             throw new RuntimeException("Label variant " + variant
                     + " not available for " + type + ". Available variants: <"
-                    + Joiner.on(", ").join(availableVariants) + ">");
+                    + Joiner.on(", ").join(labels.keySet()) + ">");
         }
 
-        return new TranslatedString(resolver, type.getName()
-                + (variant.isEmpty() ? "" : "." + variant),
-                calculateTypeFallback(type, variant));
+        return new TranslatedString(resolver, typeLabel.definingClass.getName()
+                + (variant.isEmpty() ? "" : "." + variant), typeLabel.fallback);
     }
 
     /**
@@ -261,15 +337,22 @@ public class LabelUtil {
 
                     return labelVariant != null
                             && variant.equals(labelVariant.value());
-                })
-                .map(a -> {
-                    try {
-                        return (String) a.annotationType().getMethod("value")
-                                .invoke(a);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                }).map(a -> {
+                    return getLabelOfVariantAnnotation(a);
                 });
+    }
+
+    private static String getLabelOfVariantAnnotation(Annotation a) {
+        try {
+            return (String) a.annotationType().getMethod("value").invoke(a);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected String calculateTypeFallbackNew(Class<?> type, String variant) {
+
+        return StringUtil.insertSpacesIntoCamelCaseString(type.getSimpleName());
     }
 
     protected String calculateTypeFallback(Class<?> type, String variant) {

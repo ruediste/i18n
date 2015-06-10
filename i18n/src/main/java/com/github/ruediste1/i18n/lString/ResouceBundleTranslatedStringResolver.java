@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-public class ResouceBundleTStringResolver implements TStringResolver {
+public class ResouceBundleTranslatedStringResolver implements TranslatedStringResolver {
 
     private String baseName;
     private ClassLoader loader;

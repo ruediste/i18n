@@ -9,7 +9,7 @@ import javax.inject.Inject;
 import com.github.ruediste1.i18n.lString.PatternString;
 import com.github.ruediste1.i18n.lString.PatternStringResolver;
 import com.github.ruediste1.i18n.lString.StringUtil;
-import com.github.ruediste1.i18n.lString.TStringResolver;
+import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.google.common.base.CaseFormat;
 
@@ -19,11 +19,11 @@ public class TMessageUtil {
     PatternStringResolver pStringResolver;
 
     @Inject
-    TStringResolver tStringResovler;
+    TranslatedStringResolver tStringResovler;
 
     @SuppressWarnings("unchecked")
     public <T> T getMessageInterfaceInstance(Class<T> clazz) {
-        return (T) Proxy.newProxyInstance(getClass().getClassLoader(),
+        return (T) Proxy.newProxyInstance(clazz.getClassLoader(),
                 new Class<?>[] { clazz }, this::invoke);
     }
 
@@ -53,7 +53,7 @@ public class TMessageUtil {
                 throw new RuntimeException(
                         "The return type of "
                                 + method
-                                + " is TString but there are parameters. Change the return type to PString instead");
+                                + " is TranslatedString but there are parameters. Change the return type to PatternString instead");
             }
             return tString;
         }

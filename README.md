@@ -74,10 +74,29 @@ The **MessageFormat** is a replacement for the class of the same name from the s
 See javadoc for more information.
 
 ## Workflow
-A maven plugin is used to generate a properties file containing the default translation of all labels and message interfaces in all allowed variants. Using a resource bundle editor, the different languages can be synchronized (for example using the [Eclipse ResourceBundle Editor](http://essiembre.github.io/eclipse-rbe)). 
+A maven plugin is used to generate a properties file containing the default translation of all labels and message interfaces in all allowed variants. Add the following to the `build/plugins` of your `pom.xml`
+
+     <plugin>
+          <groupId>com.github.ruediste.i18n</groupId>
+          <artifactId>i18n-maven-plugin</artifactId>
+          <version>1.0-SNAPSHOT</version>
+          <executions>
+               <execution>
+                    <phase>process-classes</phase>
+                    <goals>
+                         <goal>generate-resource-file</goal>
+                    </goals>
+                    <configuration>
+                    <basePackage>test</basePackage>
+                    </configuration>
+               </execution>
+          </executions>
+     </plugin> 
+
+Using a resource bundle editor, the different languages can be synchronized (for example using the [Eclipse ResourceBundle Editor](http://essiembre.github.io/eclipse-rbe)). 
 
 When performing a move or rename refactoring, the "Update fully qualified names in non-java text files" option should always be selected. This automatically keeps the properties files in sync with the code.
 
-When sending properties files to translators, only commited versions should be used. The file should be renamed to include the commit hash. When file is returned, the original original commit should be checked out and the file replaced. Then the changes can be merged/rebased into the development branch. This results in a good merge tooling.
+When sending properties files to translators, only committed versions should be used. The file should be renamed to include the commit hash. When file is returned, the original original commit should be checked out and the file replaced. Then the changes can be merged/rebased into the development branch. This results in a good merge tooling.
 
 

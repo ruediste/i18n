@@ -45,12 +45,6 @@ public class GenerateResourceFileMojo extends AbstractMojo {
     }
 
     /**
-     * Output directory of the build
-     */
-    @Parameter(defaultValue = "${project.build.outputDirectory}", required = true, readonly = true)
-    private File outputDirectory;
-
-    /**
      * Output file
      */
     @Parameter(defaultValue = "${project.build.directory}/translations.properties", required = true)

@@ -173,6 +173,22 @@ public class LabelUtil {
     /**
      * Get the label of a certain property in a type in the default variant
      */
+    public TranslatedString getPropertyLabel(PropertyDeclaration property) {
+        return getPropertyLabel(property.getDeclaringType(), property.getName());
+    }
+
+    /**
+     * Get the label of a certain property in a type in the default variant
+     */
+    public TranslatedString getPropertyLabel(PropertyDeclaration property,
+            String variant) {
+        return getPropertyLabel(property.getDeclaringType(),
+                property.getName(), variant);
+    }
+
+    /**
+     * Get the label of a certain property in a type in the default variant
+     */
     public TranslatedString getPropertyLabel(PropertyInfo property) {
         return getPropertyLabel(property.getDeclaringType(), property.getName());
     }

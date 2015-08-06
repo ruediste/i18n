@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import com.github.ruediste1.i18n.lString.LString;
 import com.github.ruediste1.i18n.messageFormat.ast.ArgumentNode;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.ast.SequenceNode;
@@ -16,13 +17,13 @@ import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public class PatternParser extends DefaultParser {
 
-	private final Map<String, FormatTypeParser> formatParsers = new HashMap<>();
+    private final Map<String, FormatTypeParser> formatParsers = new HashMap<>();
 
-	public PatternParser(DefaultParsingContext ctx) {
-		super(ctx);
-	}
+    public PatternParser(DefaultParsingContext ctx) {
+        super(ctx);
+    }
 
-	// @formatter:off
+    // @formatter:off
 	
 	/**
 	 * <pre>
@@ -93,7 +94,11 @@ public class PatternParser extends DefaultParser {
 			result = new ArgumentNode(argumentName) {
 				@Override
 				public String format(FormattingContext ctx) {
-					return Objects.toString(ctx.getArgument(argumentName));
+					Object arg = ctx.getArgument(argumentName);
+					if (arg instanceof LString)
+					    return ((LString) arg).resolve(ctx.getLocale());
+					else
+					    return Objects.toString(arg);
 				}
 			};
 		} else {

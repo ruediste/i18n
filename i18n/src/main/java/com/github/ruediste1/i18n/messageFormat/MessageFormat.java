@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import com.github.ruediste1.i18n.lString.LString;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateParser;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateTimeParser;
@@ -77,6 +78,7 @@ import com.github.ruediste1.lambdaPegParser.Tracer;
  * <td headers="ft"><i>(none)</i>
  * <td headers="fs"><i>(none)</i>
  * <td headers="sc">
+ * <code>{@link LString#resolve(Locale)} </code> for LStrings, otherwise
  * <code>{@link String#valueOf(Object) String.valueOf(arg)}</code>
  * </tr>
  * <tr>
@@ -335,12 +337,20 @@ public class MessageFormat {
         this.argumentPreparationFunction = argumentPreparationFunction;
     }
 
+    /**
+     * Create a new instance with the given format type parsers. The format type
+     * is the first argument to the format ( {@code argName,&lt;formatType>,...}
+     * .
+     */
     public MessageFormat withFormatTypeParsers(
             Map<String, Class<? extends FormatTypeParser>> formatTypeParsers) {
         return new MessageFormat(new HashMap<>(formatTypeParsers),
                 argumentPreparationFunction);
     }
 
+    /**
+     * Create a new instance with the given argument preparation function.
+     */
     public MessageFormat withArgumentPreparationFunction(
             BiFunction<Object, ? super Locale, Object> function) {
         return new MessageFormat(formatTypeParsers, function);

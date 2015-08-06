@@ -339,21 +339,20 @@ public class LabelUtilTest {
                 writer, null);
         String contents = writer.toString();
         assertEquals(
-                "\n"
+                "\ncom.github.ruediste1.i18n.label.LabelUtilTest$TestClass=Test Class\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.foo=myFoo\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar.foo=Foo Bar\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.short=漢字\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.foo=漢字\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar.short=Foo Bar\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.foo1=Test Class\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.short=typeShort\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字=漢字\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass=Test Class\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar=Foo Bar\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar.foo=Foo Bar\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar.short=Foo Bar\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.labeled=myLabel\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.labeled.foo=myLabelFoo\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.labeled.short=propertyShort\n"
-                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.fooBar=Foo Bar\n"
-                        + "", contents.substring(contents.indexOf("\n")));
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.short=typeShort\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字=漢字\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.foo=漢字\n"
+                        + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.short=漢字"
+                        + "\n", contents.substring(contents.indexOf("\n")));
     }
 
     @Test
@@ -386,13 +385,13 @@ public class LabelUtilTest {
     }
 
     @Test
-        public void testTryGetMethodLabel() throws Exception {
-            assertEquals(Optional.empty(),
-                    util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.foo()));
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodLabeled.class.getName() + ".bar", "the Bar")),
-                    util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.bar()));
-        }
+    public void testTryGetMethodLabel() throws Exception {
+        assertEquals(Optional.empty(),
+                util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.foo()));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodLabeled.class.getName() + ".bar", "the Bar")),
+                util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.bar()));
+    }
 
     @MethodsLabeled(variants = { "long" })
     static class TestMethodsLabeled {
@@ -426,50 +425,50 @@ public class LabelUtilTest {
     }
 
     @Test
-        public void testTryGetMethodLabel2() throws Exception {
-            assertTrue(util.tryGetMethodLabel(TestMethodsLabeled.class, x -> x.foo())
-                    .isPresent());
-            assertEquals(
-                    Optional.of(new TranslatedString(resolver,
-                            TestMethodsLabeled.class.getName() + ".foo.long",
-                            "Foo(long)")), util.getMethodLabel(
-                            TestMethodsLabeled.class, x -> x.foo(), "long"));
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
-                    util.tryGetMethodLabel(TestMethodsLabeled.class, x -> x.bar()));
-            assertTrue(util.getMethodLabel(TestMethodsLabeled.class, x -> x.bar(),
-                    "long").isPresent());
-        }
+    public void testTryGetMethodLabel2() throws Exception {
+        assertTrue(util.tryGetMethodLabel(TestMethodsLabeled.class,
+                x -> x.foo()).isPresent());
+        assertEquals(
+                Optional.of(new TranslatedString(resolver,
+                        TestMethodsLabeled.class.getName() + ".foo.long",
+                        "Foo(long)")), util.getMethodLabel(
+                        TestMethodsLabeled.class, x -> x.foo(), "long"));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
+                util.tryGetMethodLabel(TestMethodsLabeled.class, x -> x.bar()));
+        assertTrue(util.getMethodLabel(TestMethodsLabeled.class, x -> x.bar(),
+                "long").isPresent());
+    }
 
     @Test
-        public void testTryGetMethodLabelOverridden() throws Exception {
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodsLabeled.class.getName() + ".overridden",
-                    "Overridden")), util.tryGetMethodLabel(TestMethodsLabeled.class,
-                    x -> x.overridden()));
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodsLabeled.class.getName() + ".overridden~1",
-                    "Overridden")), util.tryGetMethodLabel(TestMethodsLabeled.class,
-                    x -> x.overridden(1)));
-        }
+    public void testTryGetMethodLabelOverridden() throws Exception {
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".overridden",
+                "Overridden")), util.tryGetMethodLabel(
+                TestMethodsLabeled.class, x -> x.overridden()));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".overridden~1",
+                "Overridden")), util.tryGetMethodLabel(
+                TestMethodsLabeled.class, x -> x.overridden(1)));
+    }
 
     @Test
-        public void testTryGetMethodLabelInherit() throws Exception {
-            assertEquals(
-                    Optional.of(new TranslatedString(resolver,
-                            TestMethodsLabeled.class.getName() + ".foo", "Foo")),
-                    util.tryGetMethodLabel(TestMethodLabelsDerived.class, x -> x.foo()));
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodLabelsDerived.class.getName() + ".foo2", "Foo2")),
-                    util.tryGetMethodLabel(TestMethodLabelsDerived.class,
-                            x -> x.foo2()));
-            assertEquals(
-                    Optional.of(new TranslatedString(resolver,
-                            TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
-                    util.tryGetMethodLabel(TestMethodLabelsDerived.class, x -> x.bar()));
-            assertEquals(Optional.of(new TranslatedString(resolver,
-                    TestMethodsLabeled.class.getName() + ".overridden~1",
-                    "Overridden")), util.tryGetMethodLabel(
-                    TestMethodLabelsDerived.class, x -> x.overridden(1)));
-        }
+    public void testTryGetMethodLabelInherit() throws Exception {
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".foo", "Foo")),
+                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
+                        x -> x.foo()));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodLabelsDerived.class.getName() + ".foo2", "Foo2")),
+                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
+                        x -> x.foo2()));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
+                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
+                        x -> x.bar()));
+        assertEquals(Optional.of(new TranslatedString(resolver,
+                TestMethodsLabeled.class.getName() + ".overridden~1",
+                "Overridden")), util.tryGetMethodLabel(
+                TestMethodLabelsDerived.class, x -> x.overridden(1)));
+    }
 }

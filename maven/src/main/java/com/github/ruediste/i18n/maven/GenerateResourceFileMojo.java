@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -28,6 +29,7 @@ import org.reflections.util.FilterBuilder;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.label.LabelUtil;
 import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
 
 /**
  * Generate a properties file for all defined labels and messages
@@ -51,10 +53,10 @@ public class GenerateResourceFileMojo extends AbstractMojo {
     private File outputFile;
 
     /**
-     * Base package to scan
+     * Comma separated list of base packages to scan
      */
     @Parameter(required = true)
-    private String basePackage;
+    private String basePackages;
 
     @Component
     private MavenProject project;
@@ -87,12 +89,15 @@ public class GenerateResourceFileMojo extends AbstractMojo {
 
             // scan classes
             AllTypesScanner scanner = new AllTypesScanner();
+            String[] prefixes = Splitter.on(',').splitToList(basePackages)
+                    .toArray(new String[] {});
+            getLog().debug("prefixes: " + Arrays.toString(prefixes));
             new Reflections(new ConfigurationBuilder()
                     .setScanners(scanner)
                     .addUrls(projectClasspathList)
                     .addClassLoader(loader)
                     .filterInputsBy(
-                            new FilterBuilder().includePackage(basePackage)));
+                            new FilterBuilder().includePackage(prefixes)));
 
             LabelUtil util = new LabelUtil(null);
 

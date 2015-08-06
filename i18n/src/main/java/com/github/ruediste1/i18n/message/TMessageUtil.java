@@ -10,10 +10,8 @@ import javax.inject.Singleton;
 
 import com.github.ruediste1.i18n.lString.PatternString;
 import com.github.ruediste1.i18n.lString.PatternStringResolver;
-import com.github.ruediste1.i18n.lString.StringUtil;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
-import com.google.common.base.CaseFormat;
 
 @Singleton
 public class TMessageUtil {
@@ -26,6 +24,10 @@ public class TMessageUtil {
 
     @SuppressWarnings("unchecked")
     public <T> T getMessageInterfaceInstance(Class<T> clazz) {
+        if (!clazz.isAnnotationPresent(TMessages.class)) {
+            throw new RuntimeException(
+                    "Message interfaces need to be annotated with @TMessages");
+        }
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(),
                 new Class<?>[] { clazz }, this::invoke);
     }
@@ -34,21 +36,12 @@ public class TMessageUtil {
             throws Throwable {
 
         // calculate fallback
-        String fallback;
-        TMessage tMessage = method.getAnnotation(TMessage.class);
-        if (tMessage != null) {
-            fallback = tMessage.value();
-        } else {
-            fallback = StringUtil
-                    .insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(
-                            CaseFormat.UPPER_CAMEL, method.getName()))
-                    + ".";
-        }
+        String fallback = TMessagePatternExtractionUtil
+                .getMessageFallback(method);
 
         // build string
-        TranslatedString tString = new TranslatedString(tStringResovler, method
-                .getDeclaringClass().getName() + "." + method.getName(),
-                fallback);
+        TranslatedString tString = new TranslatedString(tStringResovler,
+                TMessagePatternExtractionUtil.getMethodKey(method), fallback);
 
         if (args == null || args.length == 0) {
             // no arguments

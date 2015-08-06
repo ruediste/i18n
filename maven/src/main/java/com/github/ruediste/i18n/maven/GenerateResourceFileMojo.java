@@ -9,7 +9,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -28,6 +31,7 @@ import org.reflections.util.FilterBuilder;
 
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.label.LabelUtil;
+import com.github.ruediste1.i18n.message.TMessagePatternExtractionUtil;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 
@@ -103,6 +107,7 @@ public class GenerateResourceFileMojo extends AbstractMojo {
 
             // collect labels
             ArrayList<TranslatedString> labels = new ArrayList<>();
+            Map<String, String> messages = new HashMap<>();
             for (String clsName : scanner.getStore().keySet()) {
                 Class<?> cls;
                 try {
@@ -112,15 +117,24 @@ public class GenerateResourceFileMojo extends AbstractMojo {
                             .getLabelsDefinedOn(cls);
                     getLog().debug("defined lables " + labelsDefinedOn);
                     labels.addAll(labelsDefinedOn);
+
+                    Map<String, String> patterns = TMessagePatternExtractionUtil
+                            .getPatterns(cls);
+                    getLog().debug("defined message patterns " + patterns);
+                    messages.putAll(patterns);
                 } catch (ClassNotFoundException e) {
                     getLog().warn("Error while loading " + clsName);
                 }
             }
 
+            // create properties
+            Properties properties = util.toProperties(labels);
+            properties.putAll(messages);
+
             // write labels
             try (OutputStreamWriter out = new OutputStreamWriter(
                     new FileOutputStream(outputFile), Charsets.UTF_8)) {
-                util.toProperties(labels).store(out, "Labels");
+                properties.store(out, "Labels");
             } catch (IOException e) {
                 throw new MojoExecutionException("error while writing output",
                         e);

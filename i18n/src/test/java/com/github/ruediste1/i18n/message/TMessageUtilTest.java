@@ -12,6 +12,7 @@ import com.github.ruediste1.i18n.lString.TranslatedString;
 
 public class TMessageUtilTest {
 
+    @TMessages
     public static interface TestMessages {
         PatternString noItemFound();
 

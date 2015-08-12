@@ -1,8 +1,10 @@
 package com.github.ruediste1.i18n.lString;
 
-import java.util.List;
+import java.io.IOException;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
 
 public class ResouceBundleTranslatedStringResolver implements
@@ -50,14 +52,39 @@ public class ResouceBundleTranslatedStringResolver implements
         ResourceBundle bundle = ResourceBundle.getBundle(baseName, locale,
                 loader, new ResourceBundle.Control() {
                     @Override
-                    public List<Locale> getCandidateLocales(String baseName,
-                            Locale locale) {
-                        List<Locale> result = super.getCandidateLocales(
-                                baseName, locale);
-                        if (!useDefaultLocale)
-                            result.remove(Locale.ROOT);
-                        return result;
+                    public ResourceBundle newBundle(String baseName,
+                            Locale locale, String format, ClassLoader loader,
+                            boolean reload) throws IllegalAccessException,
+                            InstantiationException, IOException {
+                        if (!useDefaultLocale && Locale.ROOT.equals(locale)) {
+                            return new ResourceBundle() {
+
+                                @Override
+                                protected Object handleGetObject(String key) {
+                                    return null;
+                                }
+
+                                @Override
+                                public Enumeration<String> getKeys() {
+                                    return new Enumeration<String>() {
+
+                                        @Override
+                                        public boolean hasMoreElements() {
+                                            return false;
+                                        }
+
+                                        @Override
+                                        public String nextElement() {
+                                            throw new NoSuchElementException();
+                                        }
+                                    };
+                                }
+                            };
+                        } else
+                            return super.newBundle(baseName, locale, format,
+                                    loader, reload);
                     }
+
                 });
 
         // return string from bundle if available

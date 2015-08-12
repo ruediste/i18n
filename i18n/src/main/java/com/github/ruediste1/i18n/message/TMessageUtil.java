@@ -26,7 +26,8 @@ public class TMessageUtil {
     public <T> T getMessageInterfaceInstance(Class<T> clazz) {
         if (!clazz.isAnnotationPresent(TMessages.class)) {
             throw new RuntimeException(
-                    "Message interfaces need to be annotated with @TMessages");
+                    "Message interfaces need to be annotated with @TMessages: "
+                            + clazz);
         }
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(),
                 new Class<?>[] { clazz }, this::invoke);

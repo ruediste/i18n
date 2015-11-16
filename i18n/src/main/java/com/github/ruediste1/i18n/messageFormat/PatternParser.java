@@ -112,6 +112,11 @@ public class PatternParser extends DefaultParser {
 		return result;
 	}
 
+	/**
+	 * <pre>
+	 * javaIdentifierStart javaIdentifierPart*
+	 * </pre>
+	 */
 	public String identifier() {
 		String result = Char(Character::isJavaIdentifierStart, "identifier")
 				+ ZeroOrMoreChars(Character::isJavaIdentifierPart, "identifier");

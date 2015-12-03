@@ -12,34 +12,34 @@ import com.ibm.icu.text.NumberFormat;
 
 public class NumberParser extends FormatTypeParserBase {
 
-	public NumberParser(DefaultParsingContext ctx) {
-		super(ctx);
-	}
+    public NumberParser(DefaultParsingContext ctx) {
+        super(ctx);
+    }
 
-	@Override
-	public PatternNode style(java.lang.String argumentName) {
-		Function<Locale, NumberFormat> formatFactory = Optional(
-				() -> {
-					String(",");
-					whiteSpace();
-					Function<Locale, NumberFormat> result = FirstOf(() -> {
-						String("integer");
-						return l -> NumberFormat.getIntegerInstance(l);
-					}, () -> {
-						String("currency");
-						return l -> NumberFormat.getCurrencyInstance(l);
-					}, () -> {
-						String("percent");
-						return l -> NumberFormat.getPercentInstance(l);
-					}, () -> {
-						String pattern = subFormatPattern();
-						return l -> new DecimalFormat(pattern,
-								DecimalFormatSymbols.getInstance(l));
-					});
-					whiteSpace();
-					return result;
-				}).orElse(l -> NumberFormat.getInstance(l));
-		return new FormatNode(argumentName, formatFactory);
-	}
+    @Override
+    public PatternNode style(java.lang.String argumentName) {
+        Function<Locale, NumberFormat> formatFactory = Optional(() -> {
+            String(",");
+            whiteSpace();
+            Function<Locale, NumberFormat> result = this
+                    .<Function<Locale, NumberFormat>> FirstOf(() -> {
+                String("integer");
+                return l -> NumberFormat.getIntegerInstance(l);
+            } , () -> {
+                String("currency");
+                return l -> NumberFormat.getCurrencyInstance(l);
+            } , () -> {
+                String("percent");
+                return l -> NumberFormat.getPercentInstance(l);
+            } , () -> {
+                String pattern = subFormatPattern();
+                return l -> new DecimalFormat(pattern,
+                        DecimalFormatSymbols.getInstance(l));
+            });
+            whiteSpace();
+            return result;
+        }).orElse(l -> NumberFormat.getInstance(l));
+        return new FormatNode(argumentName, formatFactory);
+    }
 
 }

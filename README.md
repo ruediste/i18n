@@ -73,6 +73,10 @@ The **MessageFormat** is a replacement for the class of the same name from the s
 
 See javadoc for more information.
 
+## Additional Resource Keys
+It is possible to define resource keys without a corresponding java element (type, property, ...). Simply create a subclass of `AdditionalResourceKeyProvider` and implement it. The maven mojo (see below) will pick it up. During application startup, use the `AdditionalResourceKeyCollector` to collect the additional keys and 
+have your `TranslatedStringResolver` take them into account. When using the `ResouceBundleTranslatedStringResolver`, you can simply pass the additional keys to it.
+
 ## Workflow
 A maven plugin is used to generate a properties file containing the default translation of all labels and message interfaces in all allowed variants. Add the following to the `build/plugins` of your `pom.xml`
 

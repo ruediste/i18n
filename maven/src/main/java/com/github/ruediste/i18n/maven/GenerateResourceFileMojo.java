@@ -29,6 +29,8 @@ import org.reflections.scanners.AbstractScanner;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
+import com.github.ruediste1.i18n.lString.AdditionalResourceKeyCollector;
+import com.github.ruediste1.i18n.lString.AdditionalResourceKeyProvider;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.label.LabelUtil;
 import com.github.ruediste1.i18n.message.TMessagePatternExtractionUtil;
@@ -75,14 +77,13 @@ public class GenerateResourceFileMojo extends AbstractMojo {
             for (String element : (List<String>) project
                     .getCompileClasspathElements()) {
                 try {
-                    getLog().debug(
-                            "Classpath URL: "
-                                    + new File(element).toURI().toURL());
+                    getLog().debug("Classpath URL: "
+                            + new File(element).toURI().toURL());
 
                     projectClasspathList.add(new File(element).toURI().toURL());
                 } catch (MalformedURLException e) {
-                    throw new MojoExecutionException(element
-                            + " is an invalid classpath element", e);
+                    throw new MojoExecutionException(
+                            element + " is an invalid classpath element", e);
                 }
             }
 
@@ -96,10 +97,8 @@ public class GenerateResourceFileMojo extends AbstractMojo {
             String[] prefixes = Splitter.on(',').splitToList(basePackages)
                     .toArray(new String[] {});
             getLog().debug("prefixes: " + Arrays.toString(prefixes));
-            new Reflections(new ConfigurationBuilder()
-                    .setScanners(scanner)
-                    .addUrls(projectClasspathList)
-                    .addClassLoader(loader)
+            new Reflections(new ConfigurationBuilder().setScanners(scanner)
+                    .addUrls(projectClasspathList).addClassLoader(loader)
                     .filterInputsBy(
                             new FilterBuilder().includePackage(prefixes)));
 
@@ -108,28 +107,40 @@ public class GenerateResourceFileMojo extends AbstractMojo {
             // collect labels
             ArrayList<TranslatedString> labels = new ArrayList<>();
             Map<String, String> messages = new HashMap<>();
+            List<Class<? extends AdditionalResourceKeyProvider>> additionalResourceKeys = new ArrayList<>();
             for (String clsName : scanner.getStore().keySet()) {
                 Class<?> cls;
                 try {
                     cls = loader.loadClass(clsName);
-                    getLog().debug("Processing " + cls);
-                    List<TranslatedString> labelsDefinedOn = util
-                            .getLabelsDefinedOn(cls);
-                    getLog().debug("defined lables " + labelsDefinedOn);
-                    labels.addAll(labelsDefinedOn);
-
-                    Map<String, String> patterns = TMessagePatternExtractionUtil
-                            .getPatterns(cls);
-                    getLog().debug("defined message patterns " + patterns);
-                    messages.putAll(patterns);
                 } catch (ClassNotFoundException e) {
                     getLog().warn("Error while loading " + clsName);
+                    continue;
                 }
+                getLog().debug("Processing " + cls);
+
+                // labels
+                List<TranslatedString> labelsDefinedOn = util
+                        .getLabelsDefinedOn(cls);
+                getLog().debug("defined lables " + labelsDefinedOn);
+                labels.addAll(labelsDefinedOn);
+
+                // message patterns
+                Map<String, String> patterns = TMessagePatternExtractionUtil
+                        .getPatterns(cls);
+                getLog().debug("defined message patterns " + patterns);
+                messages.putAll(patterns);
+
+                // additional resource keys
+                if (AdditionalResourceKeyProvider.class.isAssignableFrom(cls))
+                    additionalResourceKeys.add(
+                            (Class<? extends AdditionalResourceKeyProvider>) cls);
             }
 
             // create properties
             Properties properties = util.toProperties(labels);
             properties.putAll(messages);
+            properties.putAll(AdditionalResourceKeyCollector
+                    .collectKeys(additionalResourceKeys));
 
             // write labels
             try (OutputStreamWriter out = new OutputStreamWriter(

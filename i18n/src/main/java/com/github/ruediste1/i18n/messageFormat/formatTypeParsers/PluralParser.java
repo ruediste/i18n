@@ -49,6 +49,9 @@ public class PluralParser extends FormatTypeParserBase {
         super(ctx);
     }
 
+    /**
+     * <pre> style = "," (selector "{" subPattern "}")+ <pre>
+     */
     @Override
     public PluralNode style(String argumentName) {
         PluralNode result = new PluralNode(argumentName);
@@ -65,6 +68,11 @@ public class PluralParser extends FormatTypeParserBase {
         return result;
     }
 
+    /**
+     * <pre>
+     * selector = "="? letterOrDigit+
+     * </pre>
+     */
     public String selector() {
         String result = Optional(() -> {
             String("=");
@@ -76,6 +84,10 @@ public class PluralParser extends FormatTypeParserBase {
         return result;
     }
 
+    /**
+     * Match a normal full message pattern, with the additional choice of "#",
+     * which is equivalent to the argument of the plural choice.
+     */
     public PatternNode subPattern(String argumentName) {
 
         return patternParser.pattern(() -> {
@@ -97,12 +109,12 @@ public class PluralParser extends FormatTypeParserBase {
 
         @Override
         public String format(FormattingContext ctx) {
-            Object numberArg = ctx.getArgument(argumentName);
-            if (!(numberArg instanceof Number)) {
-                throw new IllegalArgumentException("'" + numberArg
-                        + "' is not a Number");
+            Object argument = ctx.getArgument(argumentName);
+            if (!(argument instanceof Number)) {
+                throw new IllegalArgumentException(
+                        "'" + argument + "' is not a Number");
             }
-            Number numberObject = (Number) numberArg;
+            Number numberObject = (Number) argument;
             double number = numberObject.doubleValue();
 
             // try explicit rules
@@ -163,8 +175,8 @@ public class PluralParser extends FormatTypeParserBase {
 
         @Override
         public String format(FormattingContext ctx) {
-            return NumberFormat.getNumberInstance(ctx.getLocale()).format(
-                    ctx.getArgument(argumentName));
+            return NumberFormat.getNumberInstance(ctx.getLocale())
+                    .format(ctx.getArgument(argumentName));
         }
 
         @Override

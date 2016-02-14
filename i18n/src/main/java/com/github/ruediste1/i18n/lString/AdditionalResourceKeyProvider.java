@@ -5,7 +5,7 @@ package com.github.ruediste1.i18n.lString;
  * 
  * <p>
  * Implementations have to be registered with
- * {@link ResouceBundleTranslatedStringResolver#registerAdditionalResourceKeys(java.util.List)}
+ * {@link ResouceBundleTranslatedStringResolver#registerAdditionalResourceKeys(Iterable)}
  * (runtime). The maven plugin picks them up automatically if they are within a
  * scanned package.
  * 

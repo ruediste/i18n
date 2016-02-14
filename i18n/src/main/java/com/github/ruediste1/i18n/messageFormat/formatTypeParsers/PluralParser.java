@@ -50,7 +50,7 @@ public class PluralParser extends FormatTypeParserBase {
     }
 
     /**
-     * <pre> style = "," (selector "{" subPattern "}")+ <pre>
+     * <pre> style = "," (selector "{" subPattern "}")+ </pre>
      */
     @Override
     public PluralNode style(String argumentName) {

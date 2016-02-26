@@ -12,19 +12,23 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import com.github.ruediste.c3java.invocationRecording.MethodInvocationRecorder;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
+import com.google.common.reflect.TypeToken;
 
 public class LabelUtilTest {
 
     LabelUtil util;
-    TranslatedStringResolver resolver;
+    TranslatedStringResolver resolver = (a, b) -> null;
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE })
@@ -39,8 +43,8 @@ public class LabelUtilTest {
 
     }
 
-    private static class TestTypeLabeledInherited extends
-            TestImplicitelyLabeled {
+    private static class TestTypeLabeledInherited
+            extends TestImplicitelyLabeled {
 
     }
 
@@ -95,10 +99,7 @@ public class LabelUtilTest {
 
     @MembersLabeled(variants = { "foo", "short" })
     private enum TestEnum {
-        MEMBER_A, @Label("myB")
-        @Label(value = "myFoo", variant = "foo")
-        @Short("memberShort")
-        MEMBER_B
+        MEMBER_A, @Label("myB") @Label(value = "myFoo", variant = "foo") @Short("memberShort") MEMBER_B
     }
 
     private enum TestEnumUnlabeled {
@@ -107,40 +108,46 @@ public class LabelUtilTest {
 
     @Before
     public void setup() {
-        util = new LabelUtil(null);
+        util = new LabelUtil(resolver);
     }
 
     @Test
     public void testGetPropertyLabelsDirect() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.fooBar", "Foo Bar"),
-                util.getPropertyLabel(TestClass.class, "fooBar"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.fooBar", "Foo Bar"),
+                util.property(TestClass.class, "fooBar").label());
     }
 
     @Test
     public void testGetPropertyLabelsLabelAnnotation() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.labeled", "myLabel"),
-                util.getPropertyLabel(TestClass.class, "labeled"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.labeled", "myLabel"),
+                util.property(TestClass.class, "labeled").label());
     }
 
     @Test
     public void testGetPropertyLabelsVariant() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.labeled.foo", "myLabelFoo"),
-                util.getPropertyLabel(TestClass.class, "labeled", "foo"));
+        assertEquals(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.labeled.foo", "myLabelFoo"),
+                util.property(TestClass.class, "labeled").variant("foo")
+                        .label());
     }
 
     @Test
     public void testGetPropertyLabelsVariantShort() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.labeled.short", "propertyShort"),
-                util.getPropertyLabel(TestClass.class, "labeled", "short"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.labeled.short",
+                        "propertyShort"),
+                util.property(TestClass.class, "labeled").variant("short")
+                        .label());
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetPropertyLabelsInexistantVariant() throws Exception {
-        util.getPropertyLabel(TestClass.class, "labeled", "bar");
+        util.property(TestClass.class, "labeled").variant("bar").label();
     }
 
     @Test
@@ -148,115 +155,125 @@ public class LabelUtilTest {
         assertEquals(
                 new TranslatedString(resolver,
                         TestClassUnlabeled.class.getName() + ".foo", "Foo"),
-                util.getPropertyLabel(TestClassUnlabeled.class, "foo"));
+                util.property(TestClassUnlabeled.class, "foo").label());
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetPropertyLabelsUnlabeled() throws Exception {
-        assertNull(util.getPropertyLabel(TestClassUnlabeled.class, "fooBar"));
+        assertNull(util.property(TestClassUnlabeled.class, "fooBar").label());
     }
 
     @Test
     public void testGetPropertyLabelsUnicode() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.漢字", "漢字"),
-                util.getPropertyLabel(TestClass.class, "漢字"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.漢字", "漢字"),
+                util.property(TestClass.class, "漢字").label());
     }
 
     @Test
     public void testGetPropertyLabelsDerived() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.fooBar", "Foo Bar"),
-                util.getPropertyLabel(TestClassDerived.class, "fooBar"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.fooBar", "Foo Bar"),
+                util.property(TestClassDerived.class, "fooBar").label());
     }
 
     @Test
     public void testGetTypeLabel() throws Exception {
         assertEquals(new TranslatedString(resolver, TestClass.class.getName(),
-                "Test Class"), util.getTypeLabel(TestClass.class));
+                "Test Class"), util.type(TestClass.class).label());
     }
 
     @Test
     public void testGetTypeLabelImplicitely() throws Exception {
         assertEquals(new TranslatedString(resolver,
                 TestImplicitelyLabeled.class.getName() + ".short", "myShort"),
-                util.getTypeLabel(TestImplicitelyLabeled.class, "short"));
+                util.type(TestImplicitelyLabeled.class).variant("short")
+                        .label());
     }
 
     @Test
     public void testGetTypeLabelInherited() throws Exception {
         assertEquals(new TranslatedString(resolver,
                 TestImplicitelyLabeled.class.getName() + ".short", "myShort"),
-                util.getTypeLabel(TestTypeLabeledInherited.class, "short"));
+                util.type(TestTypeLabeledInherited.class).variant("short")
+                        .label());
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetTypeLabelUnlabeled() throws Exception {
-        util.getTypeLabel(TestClassUnlabeled.class);
+        util.type(TestClassUnlabeled.class).label();
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetTypeLabelMissingVariant() throws Exception {
-        util.getTypeLabel(TestClass.class, "bar");
+        util.type(TestClass.class).variant("bar").label();
     }
 
     @Test
     public void testGetTypeLabelVariant() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.foo", "myFoo"),
-                util.getTypeLabel(TestClass.class, "foo"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.foo", "myFoo"),
+                util.type(TestClass.class).variant("foo").label());
     }
 
     @Test
     public void testGetTypeLabelVariantShort() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestClass.short", "typeShort"),
-                util.getTypeLabel(TestClass.class, "short"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestClass.short", "typeShort"),
+                util.type(TestClass.class).variant("short").label());
     }
 
     @Test
     public void testGetTypeLabelVariantNoLabel() throws Exception {
-        assertEquals(new TranslatedString(resolver, TestClass.class.getName()
-                + ".foo1", "Test Class"),
-                util.getTypeLabel(TestClass.class, "foo1"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        TestClass.class.getName() + ".foo1", "Test Class"),
+                util.type(TestClass.class).variant("foo1").label());
     }
 
     @Test
     public void testGetEnumMemberLabel() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestEnum.MEMBER_A", "Member A"),
-                util.getEnumMemberLabel(TestEnum.MEMBER_A));
+        assertEquals(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_A", "Member A"),
+                util.enumMember(TestEnum.MEMBER_A).label());
     }
 
     @Test
     public void testGetEnumMemberLabelLabelAnnotation() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestEnum.MEMBER_B", "myB"),
-                util.getEnumMemberLabel(TestEnum.MEMBER_B));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestEnum.MEMBER_B", "myB"),
+                util.enumMember(TestEnum.MEMBER_B).label());
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetEnumMemberLabelUnlabeled() throws Exception {
-        util.getEnumMemberLabel(TestEnumUnlabeled.MEMBER_A);
+        util.enumMember(TestEnumUnlabeled.MEMBER_A).label();
     }
 
     @Test(expected = RuntimeException.class)
     public void testGetEnumMemberLabelInexistantVariant() throws Exception {
-        util.getEnumMemberLabel(TestEnum.MEMBER_A, "bar");
+        util.enumMember(TestEnum.MEMBER_A).variant("bar").label();
     }
 
     @Test
     public void testGetEnumMemberLabelVariant() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestEnum.MEMBER_B.foo", "myFoo"),
-                util.getEnumMemberLabel(TestEnum.MEMBER_B, "foo"));
+        assertEquals(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_B.foo", "myFoo"),
+                util.enumMember(TestEnum.MEMBER_B).variant("foo").label());
     }
 
     @Test
     public void testGetEnumMemberLabelVariantShort() throws Exception {
-        assertEquals(new TranslatedString(resolver, getClass().getName()
-                + "$TestEnum.MEMBER_B.short", "memberShort"),
-                util.getEnumMemberLabel(TestEnum.MEMBER_B, "short"));
+        assertEquals(
+                new TranslatedString(resolver,
+                        getClass().getName() + "$TestEnum.MEMBER_B.short",
+                        "memberShort"),
+                util.enumMember(TestEnum.MEMBER_B).variant("short").label());
     }
 
     @Test
@@ -264,30 +281,32 @@ public class LabelUtilTest {
         Collection<TranslatedString> labels = util
                 .getTypeLabelsOf(TestClass.class);
         assertEquals(4, labels.size());
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass", "Test Class")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.short", "typeShort")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.foo", "myFoo")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.foo1", "Test Class")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass", "Test Class")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.short", "typeShort")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.foo", "myFoo")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.foo1", "Test Class")));
     }
 
     @Test
     public void testGetLabelsDefinedOn() throws Exception {
         assertEquals(13, util.getLabelsDefinedOn(TestClass.class).size());
-        assertEquals(1, util.getLabelsDefinedOn(TestClassUnlabeled.class)
-                .size());
-        assertEquals(1, util.getLabelsDefinedOn(TestTypeLabeledInherited.class)
-                .size());
+        assertEquals(1,
+                util.getLabelsDefinedOn(TestClassUnlabeled.class).size());
+        assertEquals(1,
+                util.getLabelsDefinedOn(TestTypeLabeledInherited.class).size());
         assertEquals(6, util.getLabelsDefinedOn(TestEnum.class).size());
-        assertEquals(0, util.getLabelsDefinedOn(TestEnumUnlabeled.class).size());
-        assertEquals(1, util.getLabelsDefinedOn(TestMethodLabeled.class).size());
-        assertEquals(8, util.getLabelsDefinedOn(TestMethodsLabeled.class)
-                .size());
-        assertEquals(1, util.getLabelsDefinedOn(TestMethodLabelsDerived.class)
-                .size());
+        assertEquals(0,
+                util.getLabelsDefinedOn(TestEnumUnlabeled.class).size());
+        assertEquals(1,
+                util.getLabelsDefinedOn(TestMethodLabeled.class).size());
+        assertEquals(8,
+                util.getLabelsDefinedOn(TestMethodsLabeled.class).size());
+        assertEquals(1,
+                util.getLabelsDefinedOn(TestMethodLabelsDerived.class).size());
     }
 
     @Test
@@ -295,12 +314,12 @@ public class LabelUtilTest {
         Collection<? extends TranslatedString> labels = util
                 .getPropertyLabelsOf(TestClass.class);
         assertEquals(9, labels.size());
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.fooBar", "Foo Bar")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.fooBar.foo", "Foo Bar")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestClass.fooBar.short", "Foo Bar")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.fooBar", "Foo Bar")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.fooBar.foo", "Foo Bar")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestClass.fooBar.short", "Foo Bar")));
     }
 
     @Test
@@ -308,18 +327,20 @@ public class LabelUtilTest {
         Collection<? extends TranslatedString> labels = util
                 .getEnumMemberLabelsOf(TestEnum.class);
         assertEquals(6, labels.size());
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_A", "Member A")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_A.foo", "Member A")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_A.short", "Member A")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_B", "myB")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_B.foo", "myFoo")));
-        assertTrue(labels.contains(new TranslatedString(resolver, getClass()
-                .getName() + "$TestEnum.MEMBER_B.short", "memberShort")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_A", "Member A")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_A.foo", "Member A")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_A.short",
+                "Member A")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_B", "myB")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_B.foo", "myFoo")));
+        assertTrue(labels.contains(new TranslatedString(resolver,
+                getClass().getName() + "$TestEnum.MEMBER_B.short",
+                "memberShort")));
     }
 
     @Test
@@ -335,8 +356,8 @@ public class LabelUtilTest {
     @Test
     public void testToProperties() throws Exception {
         StringWriter writer = new StringWriter();
-        util.toProperties(util.getLabelsDefinedOn(TestClass.class)).store(
-                writer, null);
+        util.toProperties(util.getLabelsDefinedOn(TestClass.class))
+                .store(writer, null);
         String contents = writer.toString();
         assertEquals(
                 "\ncom.github.ruediste1.i18n.label.LabelUtilTest$TestClass=Test Class\n"
@@ -352,27 +373,30 @@ public class LabelUtilTest {
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字=漢字\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.foo=漢字\n"
                         + "com.github.ruediste1.i18n.label.LabelUtilTest$TestClass.漢字.short=漢字"
-                        + "\n", contents.substring(contents.indexOf("\n")));
+                        + "\n",
+                contents.substring(contents.indexOf("\n")));
     }
 
     @Test
     public void testTryGetEnumLabelVariants() throws Exception {
-        assertFalse(util.tryGetEnumLabelVariants(TestEnumUnlabeled.class)
-                .isPresent());
-        assertArrayEquals(new String[] { "foo", "short", "" }, util
-                .tryGetEnumLabelVariants(TestEnum.class).get());
+        assertFalse(
+                util.enum_(TestEnumUnlabeled.class).tryVariants().isPresent());
+        assertArrayEquals(new String[] { "foo", "short", "" },
+                util.enum_(TestEnum.class).tryVariants().get());
     }
 
     @Test
     public void testPropertiesLabeledDifferent() {
         assertEquals(
-                "foo",
-                util.getPropertyLabel(TestPropertiesLabeledDifferent.class,
-                        x -> x.getFoo(), "v1").getFallback());
+                "foo", util
+                        .property(TestPropertiesLabeledDifferent.class,
+                                x -> x.getFoo())
+                        .variant("v1").label().getFallback());
         assertEquals(
-                "bar",
-                util.getPropertyLabel(TestPropertiesLabeledDifferent.class,
-                        x -> x.getBar(), "v2").getFallback());
+                "bar", util
+                        .property(TestPropertiesLabeledDifferent.class,
+                                x -> x.getBar())
+                        .variant("v2").label().getFallback());
     }
 
     static class TestMethodLabeled {
@@ -387,10 +411,13 @@ public class LabelUtilTest {
     @Test
     public void testTryGetMethodLabel() throws Exception {
         assertEquals(Optional.empty(),
-                util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.foo()));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodLabeled.class.getName() + ".bar", "the Bar")),
-                util.tryGetMethodLabel(TestMethodLabeled.class, x -> x.bar()));
+                util.method(TypeToken.of(TestMethodLabeled.class), x -> x.foo())
+                        .tryLabel());
+        assertEquals(
+                Optional.of(new TranslatedString(resolver,
+                        TestMethodLabeled.class.getName() + ".bar", "the Bar")),
+                util.method(TypeToken.of(TestMethodLabeled.class), x -> x.bar())
+                        .tryLabel());
     }
 
     @MethodsLabeled(variants = { "long" })
@@ -426,49 +453,166 @@ public class LabelUtilTest {
 
     @Test
     public void testTryGetMethodLabel2() throws Exception {
-        assertTrue(util.tryGetMethodLabel(TestMethodsLabeled.class,
-                x -> x.foo()).isPresent());
+        assertTrue(util
+                .method(TypeToken.of(TestMethodsLabeled.class), x -> x.foo())
+                .tryLabel().isPresent());
+        assertEquals(
+                Optional.of(
+                        new TranslatedString(resolver,
+                                TestMethodsLabeled.class.getName()
+                                        + ".foo.long",
+                                "Foo(long)")),
+                util.method(TypeToken.of(TestMethodsLabeled.class),
+                        x -> x.foo()).variant("long").tryLabel());
         assertEquals(
                 Optional.of(new TranslatedString(resolver,
-                        TestMethodsLabeled.class.getName() + ".foo.long",
-                        "Foo(long)")), util.getMethodLabel(
-                        TestMethodsLabeled.class, x -> x.foo(), "long"));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
-                util.tryGetMethodLabel(TestMethodsLabeled.class, x -> x.bar()));
-        assertTrue(util.getMethodLabel(TestMethodsLabeled.class, x -> x.bar(),
-                "long").isPresent());
+                        TestMethodsLabeled.class.getName() + ".bar",
+                        "the Bar")),
+                util.method(TypeToken.of(TestMethodsLabeled.class),
+                        x -> x.bar()).tryLabel());
+        assertTrue(util
+                .method(TypeToken.of(TestMethodsLabeled.class), x -> x.bar())
+                .variant("long").tryLabel().isPresent());
     }
 
     @Test
     public void testTryGetMethodLabelOverridden() throws Exception {
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".overridden",
-                "Overridden")), util.tryGetMethodLabel(
-                TestMethodsLabeled.class, x -> x.overridden()));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".overridden~1",
-                "Overridden")), util.tryGetMethodLabel(
-                TestMethodsLabeled.class, x -> x.overridden(1)));
+        assertEquals(
+                Optional.of(
+                        new TranslatedString(resolver,
+                                TestMethodsLabeled.class.getName()
+                                        + ".overridden",
+                                "Overridden")),
+                util.method(TypeToken.of(TestMethodsLabeled.class),
+                        x -> x.overridden()).tryLabel());
+        assertEquals(
+                Optional.of(
+                        new TranslatedString(resolver,
+                                TestMethodsLabeled.class.getName()
+                                        + ".overridden~1",
+                                "Overridden")),
+                util.method(TypeToken.of(TestMethodsLabeled.class),
+                        x -> x.overridden(1)).tryLabel());
     }
 
     @Test
     public void testTryGetMethodLabelInherit() throws Exception {
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".foo", "Foo")),
-                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
-                        x -> x.foo()));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodLabelsDerived.class.getName() + ".foo2", "Foo2")),
-                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
-                        x -> x.foo2()));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".bar", "the Bar")),
-                util.tryGetMethodLabel(TestMethodLabelsDerived.class,
-                        x -> x.bar()));
-        assertEquals(Optional.of(new TranslatedString(resolver,
-                TestMethodsLabeled.class.getName() + ".overridden~1",
-                "Overridden")), util.tryGetMethodLabel(
-                TestMethodLabelsDerived.class, x -> x.overridden(1)));
+        assertEquals(
+                Optional.of(new TranslatedString(resolver,
+                        TestMethodsLabeled.class.getName() + ".foo", "Foo")),
+                util.method(TypeToken.of(TestMethodLabelsDerived.class),
+                        x -> x.foo()).tryLabel());
+        assertEquals(
+                Optional.of(
+                        new TranslatedString(resolver,
+                                TestMethodLabelsDerived.class.getName()
+                                        + ".foo2",
+                                "Foo2")),
+                util.method(TypeToken.of(TestMethodLabelsDerived.class),
+                        x -> x.foo2()).tryLabel());
+        assertEquals(
+                Optional.of(new TranslatedString(resolver,
+                        TestMethodsLabeled.class.getName() + ".bar",
+                        "the Bar")),
+                util.method(TypeToken.of(TestMethodLabelsDerived.class),
+                        x -> x.bar()).tryLabel());
+        assertEquals(
+                Optional.of(
+                        new TranslatedString(resolver,
+                                TestMethodsLabeled.class.getName()
+                                        + ".overridden~1",
+                                "Overridden")),
+                util.method(TypeToken.of(TestMethodLabelsDerived.class),
+                        x -> x.overridden(1)).tryLabel());
+    }
+
+    interface TestMethodParametersLabeled {
+        @ParametersLabeled
+        void allLabeled(String a, @Label("foo") int b);
+
+        void firstLabeled(@Labeled String a, int b);
+
+        void firstHasLabel(@Label("Hello") String a, int b);
+
+        void labelWithVariant(@Label(value = "Hello", variant = "bar") String a,
+                int b);
+    }
+
+    <T> String parameterId(Class<T> cls, Consumer<T> accessor,
+            String parameter) {
+        Method method = MethodInvocationRecorder
+                .getLastInvocation(cls, accessor).getMethod();
+        return method.getDeclaringClass().getName() + "." + method.getName()
+                + "." + parameter;
+    }
+
+    @Test
+    public void testParametersLabeled() {
+        assertEquals(new TranslatedString(resolver,
+                parameterId(TestMethodParametersLabeled.class,
+                        x -> x.allLabeled(null, 0), "a"),
+                "A"), util
+                        .method(TestMethodParametersLabeled.class,
+                                x -> x.allLabeled(null, 0))
+                        .parameter("a").label());
+        assertEquals(new TranslatedString(resolver,
+                parameterId(TestMethodParametersLabeled.class,
+                        x -> x.allLabeled(null, 0), "b"),
+                "foo"), util
+                        .method(TestMethodParametersLabeled.class,
+                                x -> x.allLabeled(null, 0))
+                        .parameter("b").label());
+    }
+
+    @Test
+    public void testParameterLabeled() {
+        assertEquals(new TranslatedString(resolver,
+                parameterId(TestMethodParametersLabeled.class,
+                        x -> x.firstLabeled(null, 0), "a"),
+                "A"), util
+                        .method(TestMethodParametersLabeled.class,
+                                x -> x.firstLabeled(null, 0))
+                        .parameter("a").label());
+
+        assertFalse(util
+                .method(TestMethodParametersLabeled.class,
+                        x -> x.firstLabeled(null, 0))
+                .parameter("b").tryLabel().isPresent());
+    }
+
+    @Test
+    public void testParameterLabel() {
+        assertEquals(new TranslatedString(resolver,
+                parameterId(TestMethodParametersLabeled.class,
+                        x -> x.firstHasLabel(null, 0), "a"),
+                "Hello"), util
+                        .method(TestMethodParametersLabeled.class,
+                                x -> x.firstHasLabel(null, 0))
+                        .parameter("a").label());
+
+        assertFalse(util
+                .method(TestMethodParametersLabeled.class,
+                        x -> x.firstHasLabel(null, 0))
+                .parameter("b").tryLabel().isPresent());
+
+        assertEquals(new TranslatedString(resolver,
+                parameterId(TestMethodParametersLabeled.class,
+                        x -> x.labelWithVariant(null, 0), "a") + ".bar",
+                "Hello"), util
+                        .method(TestMethodParametersLabeled.class,
+                                x -> x.labelWithVariant(null, 0))
+                        .parameter("a").variant("bar").label());
+
+        assertFalse(util
+                .method(TestMethodParametersLabeled.class,
+                        x -> x.labelWithVariant(null, 0))
+                .parameter("a").tryLabel().isPresent());
+    }
+
+    @Test
+    public void testGetMethodParameterLabelsOf() throws Exception {
+        assertEquals(5, util
+                .getMethodParameterLabelsOf(TestMethodParametersLabeled.class)
+                .size());
     }
 }

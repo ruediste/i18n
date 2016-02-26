@@ -8,6 +8,7 @@ This project provides utility classes for internationalization especially useful
 * Property
 * Enum Member
 * Method
+* Method Parameters
 
 In addition, message patterns are bound to message interfaces to allow parameterized string generation.
 
@@ -18,14 +19,17 @@ A fallback translation can be specified directly in code via annotations. This a
 ## Localized Strings
 Localized strings are are represented by **LString**s. Their only capability is to resolve themselves against a **Locale**, resulting in a string representation.
 
-## Labeling Classes, Properties, Enums and Enum members
+## Labeling Java Elements
 To be labeled, a class or enum has to be annotated with the **Labeled** or the **Label** annotation. 
 
-To label a property or method, it has to be annotated with **Labeled** or **Label** or it's containing type has to be annotated with **PropertiesLabeled** respectively **MethodsLabeled**.  
+To label a property or method, it has to be annotated with **Labeled** or **Label** or it's containing type has to be annotated with **PropertiesLabeled** respectively **MethodsLabeled**.
+
+To label method parameters, the **Labeled** and **Label** methods can be used on each 
+parameter, or the **ParametersLabeled** annotation can be used on the method.  
 
 To label enum members, the containing type has to be annotated with or **MembersLabeled**, respectively. It is not possible to select the enum members to be labeled individually, since enums are often used to represent some kind of state and are passed around in the application. It would be easy for an unlabeled enum member to slip through testing. 
 
-The fallback label is generated from the name in the source code. The names are interpreted in upper camel case for class and enum names, lower camel case for property names and upper underscore case for enum members. They are converted to upper case, separated with spaces. If the generated fallback label does not fit, the label can be explicitly defined using the **Label** annotation. 
+The fallback label is generated from the name in the source code. The names are interpreted in upper camel case for class and enum names, lower camel case for property, method and method parameter names and upper underscore case for enum members. They are converted to upper case, separated with spaces. If the generated fallback label does not fit, the label can be explicitly defined using the **Label** annotation. 
 
 Multiple variants of a label can be specified, by repeating the **Label** annotation, specifying the optional **variant** attribute. For properties, the getter, setter or the backing field can be annotated, but only one of the three per property. For frequently used variants, an annotation can be defined using the **LabelVariant** meta-annotation. The annotation has to have exactly the **value** attribute of string type.
 

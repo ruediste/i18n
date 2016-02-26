@@ -10,7 +10,8 @@ import java.lang.annotation.Target;
  * labeled
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE })
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE,
+        ElementType.PARAMETER })
 public @interface Labeled {
     /**
      * Variants of the label, in addition to the variants specified by the

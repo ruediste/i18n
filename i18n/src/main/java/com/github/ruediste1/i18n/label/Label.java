@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
  * label
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE })
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.TYPE,
+        ElementType.PARAMETER })
 @Repeatable(Labels.class)
 @Documented
 public @interface Label {

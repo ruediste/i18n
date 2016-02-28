@@ -224,7 +224,7 @@ public class LabelUtil {
      * Access the default variant of a property
      */
     public PropertyApi property(PropertyInfo property) {
-        return property(property.getDeclaringType(), property.getName());
+        return property(property.getIntroducingType(), property.getName());
     }
 
     /**

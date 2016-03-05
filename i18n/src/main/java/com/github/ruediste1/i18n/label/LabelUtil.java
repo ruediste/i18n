@@ -67,17 +67,14 @@ public class LabelUtil {
         }
 
         TranslatedString toTranslatedString(TranslatedStringResolver resolver) {
-            return new TranslatedString(resolver,
-                    definingClass.getName()
-                            + (variant.isEmpty() ? "" : "." + variant),
+            return new TranslatedString(resolver, definingClass.getName() + (variant.isEmpty() ? "" : "." + variant),
                     fallback);
         }
     }
 
     private Map<String, TypeLabel> getTypeLabels(Class<?> cls) {
         return tryGetTypeLabels(cls).orElseThrow(() -> new RuntimeException(
-                "Missing @Label or @Labeled annotation on " + cls
-                        + " and all it's ancestors"));
+                "Missing @Label or @Labeled annotation on " + cls + " and all it's ancestors"));
 
     }
 
@@ -85,8 +82,7 @@ public class LabelUtil {
         Map<String, TypeLabel> result = getTypeLabelsNoInherit(cls);
         if (!result.isEmpty())
             return Optional.of(result);
-        for (Class<?> superClass : Iterables.skip(JavaC3.allSuperclasses(cls),
-                1)) {
+        for (Class<?> superClass : Iterables.skip(JavaC3.allSuperclasses(cls), 1)) {
             result = getTypeLabelsNoInherit(superClass);
             if (!result.isEmpty())
                 return Optional.of(result);
@@ -98,9 +94,7 @@ public class LabelUtil {
         Map<String, TypeLabel> labels = new HashMap<>();
 
         // add variants from label annotations
-        processLabelAnnotationsNew(cls,
-                (variant, label) -> labels.put(variant,
-                        new TypeLabel(variant, cls, label)),
+        processLabelAnnotationsNew(cls, (variant, label) -> labels.put(variant, new TypeLabel(variant, cls, label)),
                 v -> calculateTypeFallbackNew(cls, v));
 
         // add variants from Labeled
@@ -108,13 +102,8 @@ public class LabelUtil {
             Labeled labeled = cls.getAnnotation(Labeled.class);
             if (labeled != null) {
                 Stream.concat(Stream.of(""), Arrays.stream(labeled.variants()))
-                        .forEach(
-                                variant -> labels
-                                        .computeIfAbsent(variant,
-                                                x -> new TypeLabel(variant, cls,
-                                                        calculateTypeFallbackNew(
-                                                                cls,
-                                                                variant))));
+                        .forEach(variant -> labels.computeIfAbsent(variant,
+                                x -> new TypeLabel(variant, cls, calculateTypeFallbackNew(cls, variant))));
             }
         }
 
@@ -127,11 +116,9 @@ public class LabelUtil {
      * @param consumer
      *            consumer of (variant, label)
      */
-    private void processVariantAnnotations(AnnotatedElement element,
-            BiConsumer<String, String> consumer) {
+    private void processVariantAnnotations(AnnotatedElement element, BiConsumer<String, String> consumer) {
         for (Annotation a : element.getAnnotations()) {
-            LabelVariant labelVariant = a.annotationType()
-                    .getAnnotation(LabelVariant.class);
+            LabelVariant labelVariant = a.annotationType().getAnnotation(LabelVariant.class);
             if (labelVariant != null) {
                 String variant = labelVariant.value();
                 consumer.accept(variant, getLabelOfVariantAnnotation(a));
@@ -143,19 +130,18 @@ public class LabelUtil {
      * get the labels of a type. The returned map is
      * propertyName->variant->label
      */
-    private Map<String, Map<String, TranslatedString>> getPropertyLabels(
-            Class<?> type) {
+    private Map<String, Map<String, TranslatedString>> getPropertyLabels(Class<?> type) {
         Map<String, Map<String, TranslatedString>> result = new HashMap<>();
 
-        for (PropertyDeclaration property : PropertyUtil
-                .getPropertyIntroductionMap(type).values()) {
+        for (PropertyDeclaration property : PropertyUtil.getPropertyIntroductionMap(type).values()) {
             Map<String, TranslatedString> variantMap = new HashMap<>();
-            getPropertyLabels(property).forEach((variant, label) -> variantMap
-                    .put(variant, new TranslatedString(resolver,
-                            property.getDeclaringType().getName() + "."
-                                    + property.getName()
-                                    + (variant.isEmpty() ? "" : "." + variant),
-                            label)));
+            getPropertyLabels(
+                    property)
+                            .forEach(
+                                    (variant, label) -> variantMap.put(variant,
+                                            new TranslatedString(resolver, property.getDeclaringType().getName() + "."
+                                                    + property.getName() + (variant.isEmpty() ? "" : "." + variant),
+                                                    label)));
             if (!variantMap.isEmpty())
                 result.put(property.getName(), variantMap);
         }
@@ -187,28 +173,22 @@ public class LabelUtil {
 
         @Override
         public TranslatedString label() {
-            Map<String, Map<String, TranslatedString>> labels = getPropertyLabels(
-                    type);
+            Map<String, Map<String, TranslatedString>> labels = getPropertyLabels(type);
             Map<String, TranslatedString> variantMap = labels.get(propertyName);
             if (variantMap == null)
-                throw new RuntimeException("No labels defined for property "
-                        + propertyName + " on " + type);
+                throw new RuntimeException("No labels defined for property " + propertyName + " on " + type);
             TranslatedString label = variantMap.get(variant);
             if (label == null)
-                throw new RuntimeException("Variant " + variant
-                        + " not defined for property " + propertyName + " on "
-                        + type + ".\nAvailable variants: "
-                        + Joiner.on(",").join(variantMap.keySet()));
+                throw new RuntimeException("Variant " + variant + " not defined for property " + propertyName + " on "
+                        + type + ".\nAvailable variants: " + Joiner.on(",").join(variantMap.keySet()));
 
             return label;
         }
 
         @Override
         public Optional<TranslatedString> tryLabel() {
-            Map<String, Map<String, TranslatedString>> labels = getPropertyLabels(
-                    type);
-            return Optional.ofNullable(labels.get(propertyName))
-                    .map(x -> x.get(variant));
+            Map<String, Map<String, TranslatedString>> labels = getPropertyLabels(type);
+            return Optional.ofNullable(labels.get(propertyName)).map(x -> x.get(variant));
         }
 
         public PropertyApi variant(String variant) {
@@ -234,11 +214,8 @@ public class LabelUtil {
         return new PropertyApi(type, propertyName, "");
     }
 
-    public <T> PropertyApi property(Class<T> startClass,
-            Consumer<T> propertyAccessor) {
-        return property(
-                PropertyUtil.getPropertyPath(startClass, propertyAccessor)
-                        .getAccessedProperty());
+    public <T> PropertyApi property(Class<T> startClass, Consumer<T> propertyAccessor) {
+        return property(PropertyUtil.getPropertyPath(startClass, propertyAccessor).getAccessedProperty());
     }
 
     public class EnumMemberApi implements LabelApi {
@@ -253,18 +230,15 @@ public class LabelUtil {
 
         @Override
         public Optional<TranslatedString> tryLabel() {
-            return tryGetEnumMemberLabelMap(member.getDeclaringClass())
-                    .map(x -> x.get(member))
+            return tryGetEnumMemberLabelMap(member.getDeclaringClass()).map(x -> x.get(member))
                     .flatMap(x -> Optional.ofNullable(x.get(variant)));
         }
 
         @Override
         public TranslatedString label() {
-            TranslatedString result = getEnumMemberLabelMap(
-                    member.getDeclaringClass()).get(member).get(variant);
+            TranslatedString result = getEnumMemberLabelMap(member.getDeclaringClass()).get(member).get(variant);
             if (result == null) {
-                throw new RuntimeException("Variant <" + variant
-                        + "> is not defined on " + member.getDeclaringClass());
+                throw new RuntimeException("Variant <" + variant + "> is not defined on " + member.getDeclaringClass());
             }
             return result;
         }
@@ -287,13 +261,12 @@ public class LabelUtil {
         }
 
         public String[] variants() {
-            return tryVariants().orElseThrow(() -> new RuntimeException(
-                    "Missing @MembersLabeled annotation for " + enumClass));
+            return tryVariants()
+                    .orElseThrow(() -> new RuntimeException("Missing @MembersLabeled annotation for " + enumClass));
         }
 
         public Optional<String[]> tryVariants() {
-            MembersLabeled membersLabeled = enumClass
-                    .getAnnotation(MembersLabeled.class);
+            MembersLabeled membersLabeled = enumClass.getAnnotation(MembersLabeled.class);
 
             if (membersLabeled != null) {
                 LinkedHashSet<String> result = new LinkedHashSet<String>();
@@ -309,11 +282,9 @@ public class LabelUtil {
         return new EnumLabelsApi(enumClass);
     }
 
-    private <T extends Enum<T>> Map<T, Map<String, TranslatedString>> getEnumMemberLabelMap(
-            Class<T> enumClass) {
+    private <T extends Enum<T>> Map<T, Map<String, TranslatedString>> getEnumMemberLabelMap(Class<T> enumClass) {
         return tryGetEnumMemberLabelMap(enumClass)
-                .orElseThrow(() -> new RuntimeException(
-                        "Missing @MembersLabeled annotation for " + enumClass));
+                .orElseThrow(() -> new RuntimeException("Missing @MembersLabeled annotation for " + enumClass));
     }
 
     private <T extends Enum<T>> Optional<Map<T, Map<String, TranslatedString>>> tryGetEnumMemberLabelMap(
@@ -324,16 +295,14 @@ public class LabelUtil {
             return Optional.empty();
 
         Map<T, Map<String, TranslatedString>> result = new HashMap<>();
-        HashSet<String> variants = new HashSet<>(
-                Arrays.asList(variantsArray.get()));
+        HashSet<String> variants = new HashSet<>(Arrays.asList(variantsArray.get()));
         for (T member : enumClass.getEnumConstants()) {
 
             Field enumField;
             try {
                 enumField = enumClass.getDeclaredField(member.name());
             } catch (NoSuchFieldException | SecurityException e) {
-                throw new RuntimeException(
-                        "Error while getting field for enum member", e);
+                throw new RuntimeException("Error while getting field for enum member", e);
             }
 
             Map<String, String> definedVariantMap = new HashMap<>();
@@ -342,30 +311,25 @@ public class LabelUtil {
                 String existing = definedVariantMap.put(variant, label);
                 if (existing != null) {
                     throw new RuntimeException(
-                            "Multiple labels defined for enum constant "
-                                    + enumField.getName() + " of " + enumClass);
+                            "Multiple labels defined for enum constant " + enumField.getName() + " of " + enumClass);
                 }
-            } , variant -> calculateEnumMemberFallbackNew(member, variant));
+            }, variant -> calculateEnumMemberFallbackNew(member, variant));
 
             for (String definedVariant : definedVariantMap.keySet()) {
                 if (!variants.contains(definedVariant))
-                    throw new RuntimeException("Variant " + definedVariant
-                            + " defined on " + enumField.getName() + " of "
-                            + enumClass
-                            + " but not declared in the @MemberLabeled annotation");
+                    throw new RuntimeException("Variant " + definedVariant + " defined on " + enumField.getName()
+                            + " of " + enumClass + " but not declared in the @MemberLabeled annotation");
             }
             Map<String, TranslatedString> labelMap = new HashMap<>();
             result.put(member, labelMap);
             for (String variant : variants) {
-                String key = enumClass.getName() + "." + enumField.getName()
-                        + (variant.isEmpty() ? "" : "." + variant);
+                String key = enumClass.getName() + "." + enumField.getName() + (variant.isEmpty() ? "" : "." + variant);
                 String label = definedVariantMap.get(variant);
                 if (label != null) {
-                    labelMap.put(variant,
-                            new TranslatedString(resolver, key, label));
+                    labelMap.put(variant, new TranslatedString(resolver, key, label));
                 } else {
-                    labelMap.put(variant, new TranslatedString(resolver, key,
-                            calculateEnumMemberFallbackNew(member, variant)));
+                    labelMap.put(variant,
+                            new TranslatedString(resolver, key, calculateEnumMemberFallbackNew(member, variant)));
 
                 }
             }
@@ -375,8 +339,7 @@ public class LabelUtil {
 
     }
 
-    protected String calculateEnumMemberFallback(Enum<?> member,
-            String variant) {
+    protected String calculateEnumMemberFallback(Enum<?> member, String variant) {
         Field memberField;
         try {
             memberField = member.getDeclaringClass().getField(member.name());
@@ -385,51 +348,38 @@ public class LabelUtil {
         }
         List<String> labels = extractLabels(memberField, variant);
         if (labels.size() > 1) {
-            throw new RuntimeException(
-                    "Multiple Label annotations found for member " + member
-                            + " of " + member.getDeclaringClass()
-                            + " using variant " + variant);
+            throw new RuntimeException("Multiple Label annotations found for member " + member + " of "
+                    + member.getDeclaringClass() + " using variant " + variant);
         }
         if (labels.size() == 1) {
             return labels.get(0);
         }
 
         return StringUtil
-                .insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE
-                        .to(CaseFormat.UPPER_CAMEL, member.name()));
+                .insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, member.name()));
     }
 
-    protected String calculateEnumMemberFallbackNew(Enum<?> member,
-            String variant) {
+    protected String calculateEnumMemberFallbackNew(Enum<?> member, String variant) {
         return StringUtil
-                .insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE
-                        .to(CaseFormat.UPPER_CAMEL, member.name()));
+                .insertSpacesIntoCamelCaseString(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, member.name()));
     }
 
-    protected String calculateMethodLabelFallback(Method method,
-            String variant) {
+    protected String calculateMethodLabelFallback(Method method, String variant) {
         return StringUtil
-                .insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL
-                        .to(CaseFormat.UPPER_CAMEL, method.getName()))
+                .insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, method.getName()))
                 + ("".equals(variant) ? "" : "(" + variant + ")");
     }
 
-    protected String calculateMethodParameterLabelFallback(String parameterName,
-            String variant) {
+    protected String calculateMethodParameterLabelFallback(String parameterName, String variant) {
         return StringUtil
-                .insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL
-                        .to(CaseFormat.UPPER_CAMEL, parameterName))
+                .insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, parameterName))
                 + ("".equals(variant) ? "" : "(" + variant + ")");
     }
 
-    protected List<String> extractLabels(AnnotatedElement annotated,
-            String variant) {
-        return Stream.concat(
-                Arrays.stream(annotated.getAnnotationsByType(Label.class))
-                        .filter(l -> variant.equals(l.variant()))
-                        .map(l -> l.value()),
-                extractLabelsOfVariantAnnotations(annotated, variant))
-                .collect(toList());
+    protected List<String> extractLabels(AnnotatedElement annotated, String variant) {
+        return Stream.concat(Arrays.stream(annotated.getAnnotationsByType(Label.class))
+                .filter(l -> variant.equals(l.variant())).map(l -> l.value()),
+                extractLabelsOfVariantAnnotations(annotated, variant)).collect(toList());
     }
 
     public class TypeApi implements LabelApi {
@@ -448,19 +398,13 @@ public class LabelUtil {
 
         @Override
         public TranslatedString label() {
-            return tryLabel()
-                    .orElseThrow(() -> new RuntimeException(
-                            "Label variant " + variant + " not available for "
-                                    + type + ". Available variants: <"
-                                    + Joiner.on(", ")
-                                            .join(getTypeLabels(type).keySet())
-                                    + ">"));
+            return tryLabel().orElseThrow(() -> new RuntimeException("Label variant " + variant + " not available for "
+                    + type + ". Available variants: <" + Joiner.on(", ").join(getTypeLabels(type).keySet()) + ">"));
         }
 
         @Override
         public Optional<TranslatedString> tryLabel() {
-            return Optional.ofNullable(getTypeLabels(type).get(variant))
-                    .map(x -> x.toTranslatedString(resolver));
+            return Optional.ofNullable(getTypeLabels(type).get(variant)).map(x -> x.toTranslatedString(resolver));
         }
 
         /**
@@ -480,11 +424,9 @@ public class LabelUtil {
      * {@link LabelVariant}, filter those matching the specified variant and
      * extract their value.
      */
-    public static Stream<String> extractLabelsOfVariantAnnotations(
-            AnnotatedElement annotated, String variant) {
+    public static Stream<String> extractLabelsOfVariantAnnotations(AnnotatedElement annotated, String variant) {
         return Arrays.stream(annotated.getAnnotations()).filter(a -> {
-            LabelVariant labelVariant = a.annotationType()
-                    .getAnnotation(LabelVariant.class);
+            LabelVariant labelVariant = a.annotationType().getAnnotation(LabelVariant.class);
 
             return labelVariant != null && variant.equals(labelVariant.value());
         }).map(a -> {
@@ -516,56 +458,40 @@ public class LabelUtil {
         }
     }
 
-    private void processPropertyLabelAnnotations(
-            Multimap<String, Pair<String, String>> labels,
+    private void processPropertyLabelAnnotations(Multimap<String, Pair<String, String>> labels,
             PropertyDeclaration property, AnnotatedElement e, String location) {
 
-        processLabelAnnotationsNew(e,
-                (variant, label) -> labels.put(variant,
-                        Pair.of(location, label)),
+        processLabelAnnotationsNew(e, (variant, label) -> labels.put(variant, Pair.of(location, label)),
                 v -> calculateFallbackFromPropertyName(property.getName(), v));
     }
 
     /**
      * get a Map from variant to label of a property
      */
-    private Map<String, String> getPropertyLabels(
-            PropertyDeclaration property) {
+    private Map<String, String> getPropertyLabels(PropertyDeclaration property) {
 
-        Multimap<String, Pair<String, String>> labels = MultimapBuilder
-                .hashKeys().arrayListValues().build();
+        Multimap<String, Pair<String, String>> labels = MultimapBuilder.hashKeys().arrayListValues().build();
 
-        processPropertyLabelAnnotations(labels, property, property.getGetter(),
-                "getter");
-        processPropertyLabelAnnotations(labels, property, property.getSetter(),
-                "setter");
-        processPropertyLabelAnnotations(labels, property,
-                property.getBackingField(), "backingField");
+        processPropertyLabelAnnotations(labels, property, property.getGetter(), "getter");
+        processPropertyLabelAnnotations(labels, property, property.getSetter(), "setter");
+        processPropertyLabelAnnotations(labels, property, property.getBackingField(), "backingField");
 
         Map<String, String> result = new HashMap<>();
 
-        for (Entry<String, Collection<Pair<String, String>>> entry : labels
-                .asMap().entrySet()) {
+        for (Entry<String, Collection<Pair<String, String>>> entry : labels.asMap().entrySet()) {
             String variant = entry.getKey();
             if (entry.getValue().size() > 1) {
-                throw new RuntimeException(
-                        "Multiple labels found for property " + property + ":\n"
-                                + entry.getValue().stream()
-                                        .map(p -> p.a + ": " + p.b)
-                                        .collect(joining(",\n")));
+                throw new RuntimeException("Multiple labels found for property " + property + ":\n"
+                        + entry.getValue().stream().map(p -> p.a + ": " + p.b).collect(joining(",\n")));
             }
             result.put(variant, Iterables.getOnlyElement(entry.getValue()).b);
         }
 
-        PropertiesLabeled propertiesLabeled = property.getDeclaringType()
-                .getAnnotation(PropertiesLabeled.class);
+        PropertiesLabeled propertiesLabeled = property.getDeclaringType().getAnnotation(PropertiesLabeled.class);
         if (propertiesLabeled != null) {
-            for (String variant : Iterables.concat(
-                    Arrays.asList(propertiesLabeled.variants()),
-                    Arrays.asList(""))) {
+            for (String variant : Iterables.concat(Arrays.asList(propertiesLabeled.variants()), Arrays.asList(""))) {
                 if (!result.containsKey(variant)) {
-                    result.put(variant, calculateFallbackFromPropertyName(
-                            property.getName(), variant));
+                    result.put(variant, calculateFallbackFromPropertyName(property.getName(), variant));
                 }
             }
         }
@@ -580,8 +506,7 @@ public class LabelUtil {
      * @param consumer
      *            consumer of (variant, label)
      */
-    private void processLabelAnnotationsNew(AnnotatedElement annotated,
-            BiConsumer<String, String> consumer,
+    private void processLabelAnnotationsNew(AnnotatedElement annotated, BiConsumer<String, String> consumer,
             Function<String, String> fallbackFunction) {
         if (annotated == null)
             return;
@@ -594,11 +519,10 @@ public class LabelUtil {
 
         Labeled labeled = annotated.getAnnotation(Labeled.class);
         if (labeled != null) {
-            Stream.concat(Arrays.asList("").stream(),
-                    Arrays.stream(labeled.variants())).forEach(v -> {
-                        if (seenVariants.add(v))
-                            consumer.accept(v, fallbackFunction.apply(v));
-                    });
+            Stream.concat(Arrays.asList("").stream(), Arrays.stream(labeled.variants())).forEach(v -> {
+                if (seenVariants.add(v))
+                    consumer.accept(v, fallbackFunction.apply(v));
+            });
         }
         processVariantAnnotations(annotated, consumer);
     }
@@ -607,10 +531,8 @@ public class LabelUtil {
      * Calculate the fallback string for a property from it's name. Override to
      * customize
      */
-    protected String calculateFallbackFromPropertyName(String name,
-            String variant) {
-        return StringUtil.insertSpacesIntoCamelCaseString(
-                CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, name));
+    protected String calculateFallbackFromPropertyName(String name, String variant) {
+        return StringUtil.insertSpacesIntoCamelCaseString(CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, name));
     }
 
     /**
@@ -638,8 +560,7 @@ public class LabelUtil {
         ArrayList<String> result = new ArrayList<>();
         if (!type.isEnum())
             return result;
-        MembersLabeled membersLabeled = type
-                .getAnnotation(MembersLabeled.class);
+        MembersLabeled membersLabeled = type.getAnnotation(MembersLabeled.class);
         if (membersLabeled == null)
             return result;
         result.add("");
@@ -647,26 +568,20 @@ public class LabelUtil {
         return result;
     }
 
-    public <T extends Enum<T>> Collection<TranslatedString> getEnumMemberLabelsOf(
-            Class<T> type) {
+    public <T extends Enum<T>> Collection<TranslatedString> getEnumMemberLabelsOf(Class<T> type) {
         return tryGetEnumMemberLabelMap(type)
-                .map(map -> map.values().stream()
-                        .flatMap(x -> x.values().stream()).collect(toList()))
+                .map(map -> map.values().stream().flatMap(x -> x.values().stream()).collect(toList()))
                 .orElseGet(() -> Collections.emptyList());
     }
 
-    public Collection<TranslatedString> getMethodParameterLabelsOf(
-            Class<?> cls) {
+    public Collection<TranslatedString> getMethodParameterLabelsOf(Class<?> cls) {
         ArrayList<TranslatedString> result = new ArrayList<>();
-        for (Entry<Method, String> methodEntry : getDirectlyDeclaredMethods(cls)
-                .entrySet()) {
-            for (Entry<String, Map<String, String>> parameterEntry : getMethodParameterLabels(
-                    methodEntry.getKey()).entrySet()) {
-                for (Entry<String, String> variantEntry : parameterEntry
-                        .getValue().entrySet()) {
-                    result.add(createMethodParameterLabel(methodEntry.getKey(),
-                            methodEntry.getValue(), parameterEntry.getKey(),
-                            variantEntry.getKey(), variantEntry.getValue()));
+        for (Entry<Method, String> methodEntry : getDirectlyDeclaredMethods(cls).entrySet()) {
+            for (Entry<String, Map<String, String>> parameterEntry : getMethodParameterLabels(methodEntry.getKey())
+                    .entrySet()) {
+                for (Entry<String, String> variantEntry : parameterEntry.getValue().entrySet()) {
+                    result.add(createMethodParameterLabel(methodEntry.getKey(), methodEntry.getValue(),
+                            parameterEntry.getKey(), variantEntry.getKey(), variantEntry.getValue()));
                 }
             }
         }
@@ -674,13 +589,12 @@ public class LabelUtil {
     }
 
     public Collection<TranslatedString> getPropertyLabelsOf(Class<?> type) {
-        return getPropertyLabels(type).values().stream()
-                .flatMap(map -> map.values().stream()).collect(toList());
+        return getPropertyLabels(type).values().stream().flatMap(map -> map.values().stream()).collect(toList());
     }
 
     public Collection<TranslatedString> getTypeLabelsOf(Class<?> type) {
-        return tryGetTypeLabels(type).map(map -> map.values().stream()
-                .map(x -> x.toTranslatedString(resolver)).collect(toList()))
+        return tryGetTypeLabels(type)
+                .map(map -> map.values().stream().map(x -> x.toTranslatedString(resolver)).collect(toList()))
                 .orElse(Collections.emptyList());
     }
 
@@ -690,8 +604,7 @@ public class LabelUtil {
 
             @Override
             public synchronized Enumeration<Object> keys() {
-                return Collections
-                        .enumeration(new TreeSet<Object>(super.keySet()));
+                return Collections.enumeration(new TreeSet<Object>(super.keySet()));
             }
         };
         strings.forEach(string -> {
@@ -706,8 +619,8 @@ public class LabelUtil {
      * all method labels.
      */
     public Collection<TranslatedString> getDeclaredMethodLabels(Class<?> cls) {
-        return getDirectLabelsOfDeclaredMethods(cls).values().stream()
-                .flatMap(m -> m.values().stream()).collect(toList());
+        return getDirectLabelsOfDeclaredMethods(cls).values().stream().flatMap(m -> m.values().stream())
+                .collect(toList());
     }
 
     public class MethodApi implements LabelApi {
@@ -727,15 +640,13 @@ public class LabelUtil {
         @Override
         public TranslatedString label() {
             return tryLabel().orElseThrow(() -> new RuntimeException(
-                    "Unable to find method label for " + method
-                            + " and variant <" + variant + ">"));
+                    "Unable to find method label for " + method + " and variant <" + variant + ">"));
         }
 
         @Override
         public Optional<TranslatedString> tryLabel() {
             for (Method m : MethodUtil.getDeclarations(method)) {
-                Map<String, TranslatedString> labels = getDirectLabelsOfDeclaredMethods(
-                        m.getDeclaringClass()).get(m);
+                Map<String, TranslatedString> labels = getDirectLabelsOfDeclaredMethods(m.getDeclaringClass()).get(m);
                 if (labels != null && !labels.isEmpty()) {
                     return Optional.ofNullable(labels.get(variant));
                 }
@@ -751,32 +662,26 @@ public class LabelUtil {
     /**
      * @return parameterName->variant->label
      */
-    private Map<String, Map<String, String>> getMethodParameterLabels(
-            Method m) {
+    private Map<String, Map<String, String>> getMethodParameterLabels(Method m) {
         Map<String, Map<String, String>> result = new HashMap<>();
 
         // process label annotations
         for (Parameter p : m.getParameters()) {
             Map<String, String> map = new HashMap<>();
-            processLabelAnnotationsNew(p,
-                    (variant, label) -> map.put(variant, label),
+            processLabelAnnotationsNew(p, (variant, label) -> map.put(variant, label),
                     v -> calculateMethodParameterLabelFallback(p.getName(), v));
             if (!map.isEmpty())
                 result.put(p.getName(), map);
         }
 
         // process ParametersLabeled
-        ParametersLabeled parametersLabeled = m
-                .getAnnotation(ParametersLabeled.class);
+        ParametersLabeled parametersLabeled = m.getAnnotation(ParametersLabeled.class);
         if (parametersLabeled != null) {
-            for (String variant : Iterables.concat(Arrays.asList(""),
-                    Arrays.asList(parametersLabeled.variants()))) {
+            for (String variant : Iterables.concat(Arrays.asList(""), Arrays.asList(parametersLabeled.variants()))) {
 
                 for (Parameter p : m.getParameters()) {
-                    result.computeIfAbsent(p.getName(), x -> new HashMap<>())
-                            .putIfAbsent(variant,
-                                    calculateMethodParameterLabelFallback(
-                                            p.getName(), variant));
+                    result.computeIfAbsent(p.getName(), x -> new HashMap<>()).putIfAbsent(variant,
+                            calculateMethodParameterLabelFallback(p.getName(), variant));
                 }
             }
         }
@@ -799,22 +704,16 @@ public class LabelUtil {
         @Override
         public TranslatedString label() {
             return tryLabel().orElseThrow(() -> new RuntimeException(
-                    "Label for parameter " + parameter + " of method " + method
-                            + " not found"));
+                    "Label for parameter " + parameter + " of method " + method + " not found"));
         }
 
         @Override
         public Optional<TranslatedString> tryLabel() {
-            return Optional
-                    .ofNullable(getMethodParameterLabels(method).get(parameter))
-                    .flatMap(map -> Optional.ofNullable(map.get(variant)))
-                    .map(fallback -> {
-                        Map<Method, String> methodMap = getDirectlyDeclaredMethods(
-                                method.getDeclaringClass());
+            return Optional.ofNullable(getMethodParameterLabels(method).get(parameter))
+                    .flatMap(map -> Optional.ofNullable(map.get(variant))).map(fallback -> {
+                        Map<Method, String> methodMap = getDirectlyDeclaredMethods(method.getDeclaringClass());
 
-                        return createMethodParameterLabel(method,
-                                methodMap.get(method), parameter, variant,
-                                fallback);
+                        return createMethodParameterLabel(method, methodMap.get(method), parameter, variant, fallback);
                     });
         }
 
@@ -823,14 +722,14 @@ public class LabelUtil {
         }
     }
 
-    protected TranslatedString createMethodParameterLabel(Method method,
-            String uniqueMethodName, String parameter, String variant,
-            String fallback) {
-        return new TranslatedString(resolver,
-                method.getDeclaringClass().getName() + "." + uniqueMethodName
-                        + "." + parameter
-                        + ("".equals(variant) ? "" : "." + variant),
-                fallback);
+    public MethodParameterApi methodParameter(Parameter parameter) {
+        return new MethodParameterApi((Method) parameter.getDeclaringExecutable(), parameter.getName(), "");
+    }
+
+    protected TranslatedString createMethodParameterLabel(Method method, String uniqueMethodName, String parameter,
+            String variant, String fallback) {
+        return new TranslatedString(resolver, method.getDeclaringClass().getName() + "." + uniqueMethodName + "."
+                + parameter + ("".equals(variant) ? "" : "." + variant), fallback);
     }
 
     public <T> MethodApi method(Class<T> cls, Consumer<T> accessor) {
@@ -841,8 +740,7 @@ public class LabelUtil {
      * access the label of the last accessed method
      */
     public <T> MethodApi method(TypeToken<T> cls, Consumer<T> accessor) {
-        return method(MethodInvocationRecorder.getLastInvocation(cls, accessor)
-                .getMethod());
+        return method(MethodInvocationRecorder.getLastInvocation(cls, accessor).getMethod());
     }
 
     public MethodApi method(Method method) {
@@ -855,8 +753,7 @@ public class LabelUtil {
      * 
      * @return method->variant->label
      */
-    private Map<Method, Map<String, TranslatedString>> getDirectLabelsOfDeclaredMethods(
-            Class<?> cls) {
+    private Map<Method, Map<String, TranslatedString>> getDirectLabelsOfDeclaredMethods(Class<?> cls) {
         // name->signature->method
         Map<String, Map<String, Method>> methods = new HashMap<>();
         for (Method m : cls.getDeclaredMethods()) {
@@ -865,25 +762,17 @@ public class LabelUtil {
                 continue;
             // add method to map
             String signature = Type.getMethodDescriptor(m);
-            methods.computeIfAbsent(m.getName(), x -> new TreeMap<>())
-                    .put(signature, m);
+            methods.computeIfAbsent(m.getName(), x -> new TreeMap<>()).put(signature, m);
         }
 
         // method->variant->label
         Map<Method, Map<String, TranslatedString>> result = new HashMap<>();
         // generate the translated strings, making duplicate method names unique
         // using a count
-        for (Entry<Method, String> entry : getDirectlyDeclaredMethods(cls)
-                .entrySet()) {
+        for (Entry<Method, String> entry : getDirectlyDeclaredMethods(cls).entrySet()) {
             Method m = entry.getKey();
-            processDirectMethodLabels(m,
-                    (variant, label) -> result
-                            .computeIfAbsent(m, x -> new HashMap<>())
-                            .put(variant,
-                                    new TranslatedString(
-                                            resolver, getMethodKey(m,
-                                                    entry.getValue(), variant),
-                                            label)));
+            processDirectMethodLabels(m, (variant, label) -> result.computeIfAbsent(m, x -> new HashMap<>())
+                    .put(variant, new TranslatedString(resolver, getMethodKey(m, entry.getValue(), variant), label)));
         }
 
         return result;
@@ -893,8 +782,7 @@ public class LabelUtil {
      * Get all directly declared methods, without property accessors, and their
      * unique name.
      */
-    private static Map<Method, String> getDirectlyDeclaredMethods(
-            Class<?> cls) {
+    private static Map<Method, String> getDirectlyDeclaredMethods(Class<?> cls) {
         // name->signature->method
         Map<String, Map<String, Method>> methods = new HashMap<>();
         for (Method m : cls.getDeclaredMethods()) {
@@ -903,8 +791,7 @@ public class LabelUtil {
                 continue;
             // add method to map
             String signature = Type.getMethodDescriptor(m);
-            methods.computeIfAbsent(m.getName(), x -> new TreeMap<>())
-                    .put(signature, m);
+            methods.computeIfAbsent(m.getName(), x -> new TreeMap<>()).put(signature, m);
         }
 
         // method->variant->label
@@ -929,29 +816,24 @@ public class LabelUtil {
      * @param consumer
      *            consumer of (variant,label)
      */
-    private void processDirectMethodLabels(Method method,
-            BiConsumer<String, String> consumer) {
+    private void processDirectMethodLabels(Method method, BiConsumer<String, String> consumer) {
         HashSet<String> seenVariants = new HashSet<>();
         processLabelAnnotationsNew(method, (variant, label) -> {
             if (seenVariants.add(variant))
                 consumer.accept(variant, label);
-        } , v -> calculateMethodLabelFallback(method, v));
+        }, v -> calculateMethodLabelFallback(method, v));
 
-        MethodsLabeled methodsLabeled = method.getDeclaringClass()
-                .getAnnotation(MethodsLabeled.class);
+        MethodsLabeled methodsLabeled = method.getDeclaringClass().getAnnotation(MethodsLabeled.class);
         if (methodsLabeled != null) {
-            for (String variant : Iterables.concat(Arrays.asList(""),
-                    Arrays.asList(methodsLabeled.variants()))) {
+            for (String variant : Iterables.concat(Arrays.asList(""), Arrays.asList(methodsLabeled.variants()))) {
                 if (seenVariants.add(variant)) {
-                    consumer.accept(variant,
-                            calculateMethodLabelFallback(method, variant));
+                    consumer.accept(variant, calculateMethodLabelFallback(method, variant));
                 }
             }
         }
     }
 
-    private String getMethodKey(Method method, String uniqueMethodName,
-            String variant) {
+    private String getMethodKey(Method method, String uniqueMethodName, String variant) {
         return method.getDeclaringClass().getName() + "." + uniqueMethodName
                 + ("".equals(variant) ? "" : "." + variant);
     }

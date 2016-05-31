@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -40,6 +41,7 @@ import com.github.ruediste.c3java.method.MethodUtil;
 import com.github.ruediste.c3java.properties.PropertyDeclaration;
 import com.github.ruediste.c3java.properties.PropertyInfo;
 import com.github.ruediste.c3java.properties.PropertyUtil;
+import com.github.ruediste1.i18n.lString.LString;
 import com.github.ruediste1.i18n.lString.StringUtil;
 import com.github.ruediste1.i18n.lString.TranslatedString;
 import com.github.ruediste1.i18n.lString.TranslatedStringResolver;
@@ -141,7 +143,7 @@ public class LabelUtil {
                                     (variant, label) -> variantMap.put(variant,
                                             new TranslatedString(resolver, property.getDeclaringType().getName() + "."
                                                     + property.getName() + (variant.isEmpty() ? "" : "." + variant),
-                                                    label)));
+                                            label)));
             if (!variantMap.isEmpty())
                 result.put(property.getName(), variantMap);
         }
@@ -313,7 +315,7 @@ public class LabelUtil {
                     throw new RuntimeException(
                             "Multiple labels defined for enum constant " + enumField.getName() + " of " + enumClass);
                 }
-            }, variant -> calculateEnumMemberFallbackNew(member, variant));
+            } , variant -> calculateEnumMemberFallbackNew(member, variant));
 
             for (String definedVariant : definedVariantMap.keySet()) {
                 if (!variants.contains(definedVariant))
@@ -404,7 +406,7 @@ public class LabelUtil {
 
         @Override
         public Optional<TranslatedString> tryLabel() {
-            return Optional.ofNullable(getTypeLabels(type).get(variant)).map(x -> x.toTranslatedString(resolver));
+            return tryGetTypeLabels(type).map(x -> x.get(variant)).map(x -> x.toTranslatedString(resolver));
         }
 
         /**
@@ -821,7 +823,7 @@ public class LabelUtil {
         processLabelAnnotationsNew(method, (variant, label) -> {
             if (seenVariants.add(variant))
                 consumer.accept(variant, label);
-        }, v -> calculateMethodLabelFallback(method, v));
+        } , v -> calculateMethodLabelFallback(method, v));
 
         MethodsLabeled methodsLabeled = method.getDeclaringClass().getAnnotation(MethodsLabeled.class);
         if (methodsLabeled != null) {
@@ -836,5 +838,26 @@ public class LabelUtil {
     private String getMethodKey(Method method, String uniqueMethodName, String variant) {
         return method.getDeclaringClass().getName() + "." + uniqueMethodName
                 + ("".equals(variant) ? "" : "." + variant);
+    }
+
+    public LString getLabel(Object obj) {
+        return tryGetLabel(obj).map(x -> (LString) x).orElseGet(() -> l -> Objects.toString(obj));
+    }
+
+    /**
+     * Attempt to find a label for the given object
+     */
+    public Optional<TranslatedString> tryGetLabel(Object obj) {
+        if (obj instanceof Class) {
+            return type((Class<?>) obj).tryLabel();
+        }
+        if (obj instanceof Enum<?>) {
+            return enumMember((Enum<?>) obj).tryLabel();
+        }
+        if (obj instanceof Method) {
+            return method((Method) obj).tryLabel();
+        }
+        return Optional.empty();
+
     }
 }

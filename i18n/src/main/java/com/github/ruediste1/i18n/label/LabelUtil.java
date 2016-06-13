@@ -55,6 +55,8 @@ import com.google.common.reflect.TypeToken;
 public class LabelUtil {
 
     private TranslatedStringResolver resolver;
+    private Function<AnnotatedElement, Map<String, TranslatedString>> additionalLabelsExtractor = x -> Collections
+            .emptyMap();
 
     private static class TypeLabel {
         String variant;
@@ -96,7 +98,7 @@ public class LabelUtil {
         Map<String, TypeLabel> labels = new HashMap<>();
 
         // add variants from label annotations
-        processLabelAnnotationsNew(cls, (variant, label) -> labels.put(variant, new TypeLabel(variant, cls, label)),
+        processLabelAnnotations(cls, (variant, label) -> labels.put(variant, new TypeLabel(variant, cls, label)),
                 v -> calculateTypeFallbackNew(cls, v));
 
         // add variants from Labeled
@@ -309,7 +311,7 @@ public class LabelUtil {
 
             Map<String, String> definedVariantMap = new HashMap<>();
 
-            processLabelAnnotationsNew(enumField, (variant, label) -> {
+            processLabelAnnotations(enumField, (variant, label) -> {
                 String existing = definedVariantMap.put(variant, label);
                 if (existing != null) {
                     throw new RuntimeException(
@@ -421,6 +423,15 @@ public class LabelUtil {
         return new TypeApi(type, "");
     }
 
+    public Map<String, TranslatedString> typeLabels(Class<?> type) {
+        HashMap<String, TranslatedString> result = new HashMap<>();
+
+        tryGetTypeLabels(type).ifPresent(map -> map.entrySet().forEach(entry -> {
+            result.put(entry.getKey(), entry.getValue().toTranslatedString(resolver));
+        }));
+        return result;
+    }
+
     /**
      * Iterate over all annotations having the meta-annotation
      * {@link LabelVariant}, filter those matching the specified variant and
@@ -463,7 +474,7 @@ public class LabelUtil {
     private void processPropertyLabelAnnotations(Multimap<String, Pair<String, String>> labels,
             PropertyDeclaration property, AnnotatedElement e, String location) {
 
-        processLabelAnnotationsNew(e, (variant, label) -> labels.put(variant, Pair.of(location, label)),
+        processLabelAnnotations(e, (variant, label) -> labels.put(variant, Pair.of(location, label)),
                 v -> calculateFallbackFromPropertyName(property.getName(), v));
     }
 
@@ -508,7 +519,7 @@ public class LabelUtil {
      * @param consumer
      *            consumer of (variant, label)
      */
-    private void processLabelAnnotationsNew(AnnotatedElement annotated, BiConsumer<String, String> consumer,
+    private void processLabelAnnotations(AnnotatedElement annotated, BiConsumer<String, String> consumer,
             Function<String, String> fallbackFunction) {
         if (annotated == null)
             return;
@@ -519,13 +530,12 @@ public class LabelUtil {
                 consumer.accept(label.variant(), label.value());
         }
 
-        Labeled labeled = annotated.getAnnotation(Labeled.class);
-        if (labeled != null) {
+        Optional.ofNullable(annotated.getAnnotation(Labeled.class)).ifPresent(labeled -> {
             Stream.concat(Arrays.asList("").stream(), Arrays.stream(labeled.variants())).forEach(v -> {
                 if (seenVariants.add(v))
                     consumer.accept(v, fallbackFunction.apply(v));
             });
-        }
+        });
         processVariantAnnotations(annotated, consumer);
     }
 
@@ -670,7 +680,7 @@ public class LabelUtil {
         // process label annotations
         for (Parameter p : m.getParameters()) {
             Map<String, String> map = new HashMap<>();
-            processLabelAnnotationsNew(p, (variant, label) -> map.put(variant, label),
+            processLabelAnnotations(p, (variant, label) -> map.put(variant, label),
                     v -> calculateMethodParameterLabelFallback(p.getName(), v));
             if (!map.isEmpty())
                 result.put(p.getName(), map);
@@ -769,12 +779,14 @@ public class LabelUtil {
 
         // method->variant->label
         Map<Method, Map<String, TranslatedString>> result = new HashMap<>();
+
         // generate the translated strings, making duplicate method names unique
         // using a count
         for (Entry<Method, String> entry : getDirectlyDeclaredMethods(cls).entrySet()) {
             Method m = entry.getKey();
-            processDirectMethodLabels(m, (variant, label) -> result.computeIfAbsent(m, x -> new HashMap<>())
-                    .put(variant, new TranslatedString(resolver, getMethodKey(m, entry.getValue(), variant), label)));
+            result.put(m, new HashMap<>(additionalLabelsExtractor.apply(m)));
+            processDirectMethodLabels(m, (variant, label) -> result.get(m).put(variant,
+                    new TranslatedString(resolver, getMethodKey(m, entry.getValue(), variant), label)));
         }
 
         return result;
@@ -820,7 +832,7 @@ public class LabelUtil {
      */
     private void processDirectMethodLabels(Method method, BiConsumer<String, String> consumer) {
         HashSet<String> seenVariants = new HashSet<>();
-        processLabelAnnotationsNew(method, (variant, label) -> {
+        processLabelAnnotations(method, (variant, label) -> {
             if (seenVariants.add(variant))
                 consumer.accept(variant, label);
         } , v -> calculateMethodLabelFallback(method, v));
@@ -860,4 +872,14 @@ public class LabelUtil {
         return Optional.empty();
 
     }
+
+    public Function<AnnotatedElement, Map<String, TranslatedString>> getAdditionalLabelsExtractor() {
+        return additionalLabelsExtractor;
+    }
+
+    public void setAdditionalLabelsExtractor(
+            Function<AnnotatedElement, Map<String, TranslatedString>> additionalLabelsExtractor) {
+        this.additionalLabelsExtractor = additionalLabelsExtractor;
+    }
+
 }

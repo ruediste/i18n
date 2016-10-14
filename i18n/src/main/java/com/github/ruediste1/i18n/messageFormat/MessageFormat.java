@@ -12,6 +12,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
+import com.github.ruediste.lambdaPegParser.ParserFactory;
+import com.github.ruediste.lambdaPegParser.Tracer;
 import com.github.ruediste1.i18n.lString.LString;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.DateParser;
@@ -21,9 +24,6 @@ import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParse
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.NumberParser;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.PluralParser;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.TimeParser;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
-import com.github.ruediste1.lambdaPegParser.ParserFactory;
-import com.github.ruediste1.lambdaPegParser.Tracer;
 
 /**
  * Takes a set of objects, formats them, then inserts the formatted strings into

@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import com.github.ruediste.lambdaPegParser.DefaultParser;
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.lString.LString;
 import com.github.ruediste1.i18n.messageFormat.ast.ArgumentNode;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 import com.github.ruediste1.i18n.messageFormat.ast.SequenceNode;
 import com.github.ruediste1.i18n.messageFormat.formatTypeParsers.FormatTypeParser;
-import com.github.ruediste1.lambdaPegParser.DefaultParser;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public class PatternParser extends DefaultParser {
 
@@ -65,7 +65,7 @@ public class PatternParser extends DefaultParser {
 	public String literalChar() {
 		return  FirstOf(
 						() -> {
-							String("$");
+							Str("$");
 							return AnyChar();
 						},
 						() -> NoneOf("}"));
@@ -77,12 +77,12 @@ public class PatternParser extends DefaultParser {
 	 * </pre>
 	 */
 	public PatternNode placeHolder() {
-		String("{");
+		Str("{");
 		whiteSpace();
 		String argumentName = identifier();
 		whiteSpace();
-		String type = Optional(() -> {
-			String(",");
+		String type = Opt(() -> {
+			Str(",");
 			whiteSpace();
 			String result = identifier();
 			whiteSpace();
@@ -108,7 +108,7 @@ public class PatternParser extends DefaultParser {
 			}
 			result = parser.style(argumentName);
 		}
-		String("}");
+		Str("}");
 		return result;
 	}
 

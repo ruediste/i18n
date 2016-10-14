@@ -2,9 +2,9 @@ package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import static java.util.stream.Collectors.joining;
 
+import com.github.ruediste.lambdaPegParser.DefaultParser;
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.messageFormat.PatternParser;
-import com.github.ruediste1.lambdaPegParser.DefaultParser;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public abstract class FormatTypeParserBase extends DefaultParser implements
 		FormatTypeParser {
@@ -28,7 +28,7 @@ public abstract class FormatTypeParserBase extends DefaultParser implements
 	 */
 	public String subFormatPattern() {
 		return OneOrMore(
-				() -> FirstOf(() -> String("''"),
+				() -> FirstOf(() -> Str("''"),
 						() -> quotedSubFormatPattern(), () -> NoneOf("}")))
 				.stream().collect(joining());
 	}
@@ -39,11 +39,11 @@ public abstract class FormatTypeParserBase extends DefaultParser implements
 	 * </pre>
 	 */
 	public String quotedSubFormatPattern() {
-		return String("'")
+		return Str("'")
 				+ this.<String> ZeroOrMore(
-						() -> FirstOf(() -> String("''"), () -> NoneOf("'")))
+						() -> FirstOf(() -> Str("''"), () -> NoneOf("'")))
 						.stream().collect(joining())
-				+ Optional(() -> String("'")).orElse("");
+				+ Opt(() -> Str("'")).orElse("");
 	}
 
 	public void whiteSpace() {

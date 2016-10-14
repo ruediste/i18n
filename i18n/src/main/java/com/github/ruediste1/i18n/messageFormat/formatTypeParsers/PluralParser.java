@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.messageFormat.FormattingContext;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 import com.ibm.icu.text.NumberFormat;
 import com.ibm.icu.text.PluralFormat;
 import com.ibm.icu.text.PluralRules;
@@ -55,13 +55,13 @@ public class PluralParser extends FormatTypeParserBase {
     @Override
     public PluralNode style(String argumentName) {
         PluralNode result = new PluralNode(argumentName);
-        String(",");
+        Str(",");
         whiteSpace();
         OneOrMore(() -> {
             String selector = selector();
-            String("{");
+            Str("{");
             PatternNode node = subPattern(argumentName);
-            String("}");
+            Str("}");
             whiteSpace();
             result.addRule(selector, node);
         });
@@ -74,8 +74,8 @@ public class PluralParser extends FormatTypeParserBase {
      * </pre>
      */
     public String selector() {
-        String result = Optional(() -> {
-            String("=");
+        String result = Opt(() -> {
+            Str("=");
             whiteSpace();
             return "=";
         }).orElse("");
@@ -91,7 +91,7 @@ public class PluralParser extends FormatTypeParserBase {
     public PatternNode subPattern(String argumentName) {
 
         return patternParser.pattern(() -> {
-            String("#");
+            Str("#");
             return new HashNode(argumentName);
         });
     }

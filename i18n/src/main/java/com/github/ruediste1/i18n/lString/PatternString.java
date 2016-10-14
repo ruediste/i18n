@@ -16,13 +16,12 @@ import com.google.common.base.Objects;
  * placeholders are substituted with the corresponding arguments.
  * </p>
  */
-public class PatternString implements LString {
+public class PatternString extends LString {
     private final LString pattern;
     private final Map<String, Object> arguments;
     private final PatternStringResolver resolver;
 
-    public PatternString(PatternStringResolver resolver, LString pattern,
-            Map<String, Object> arguments) {
+    public PatternString(PatternStringResolver resolver, LString pattern, Map<String, Object> arguments) {
         this.resolver = resolver;
         this.pattern = pattern;
         this.arguments = new HashMap<>(arguments);
@@ -32,22 +31,19 @@ public class PatternString implements LString {
      * Construct a {@link PatternString} using a key and a parameter list. The
      * parameters are pairs of parameter names and parameter values
      */
-    public PatternString(PatternStringResolver resolver, LString pattern,
-            Object... parameters) {
+    public PatternString(PatternStringResolver resolver, LString pattern, Object... parameters) {
         this.resolver = resolver;
         this.pattern = pattern;
         this.arguments = new HashMap<>();
 
         if ((parameters.length % 2) != 0) {
-            throw new IllegalArgumentException(
-                    "The number of parameters has to be even (key-value pairs)");
+            throw new IllegalArgumentException("The number of parameters has to be even (key-value pairs)");
         }
         for (int i = 0; i < parameters.length; i += 2) {
             Object key = parameters[i];
             Object value = parameters[i + 1];
             if (!(key instanceof String)) {
-                throw new IllegalArgumentException("index " + i
-                        + ": parameter keys have to be strings");
+                throw new IllegalArgumentException("index " + i + ": parameter keys have to be strings");
             }
             this.arguments.put((String) key, value);
         }
@@ -67,8 +63,7 @@ public class PatternString implements LString {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).add("template", pattern)
-                .add("arguments", arguments).toString();
+        return Objects.toStringHelper(this).add("template", pattern).add("arguments", arguments).toString();
     }
 
     public LString getPattern() {
@@ -93,8 +88,7 @@ public class PatternString implements LString {
             return false;
         }
         PatternString other = (PatternString) obj;
-        return Objects.equal(pattern, other.pattern)
-                && Objects.equal(arguments, other.arguments)
+        return Objects.equal(pattern, other.pattern) && Objects.equal(arguments, other.arguments)
                 && Objects.equal(resolver, other.resolver);
     }
 

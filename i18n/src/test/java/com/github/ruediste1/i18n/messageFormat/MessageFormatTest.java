@@ -17,18 +17,16 @@ public class MessageFormatTest {
 
     @Test
     public void testArgumentPreparationFunction() {
-        MessageFormat fmt = new MessageFormat()
-                .withArgumentPreparationFunction((arg, locale) -> {
-                    if (arg instanceof Dummy)
-                        return "dummy1";
-                    return arg;
-                });
+        MessageFormat fmt = new MessageFormat().withArgumentPreparationFunction((arg, locale) -> {
+            if (arg instanceof Dummy)
+                return "dummy1";
+            return arg;
+        });
 
         HashMap<String, Object> args = new HashMap<>();
         args.put("arg", new Dummy());
 
-        assertEquals("hello mister dummy1",
-                fmt.format("hello mister {arg}", args, Locale.ENGLISH));
+        assertEquals("hello mister dummy1", fmt.format("hello mister {arg}", args, Locale.ENGLISH));
     }
 
     @Test
@@ -36,9 +34,8 @@ public class MessageFormatTest {
         MessageFormat fmt = new MessageFormat();
 
         HashMap<String, Object> args = new HashMap<>();
-        args.put("arg", (LString) locale -> "dummy1");
+        args.put("arg", LString.of("dummy1"));
 
-        assertEquals("hello mister dummy1",
-                fmt.format("hello mister {arg}", args, Locale.ENGLISH));
+        assertEquals("hello mister dummy1", fmt.format("hello mister {arg}", args, Locale.ENGLISH));
     }
 }

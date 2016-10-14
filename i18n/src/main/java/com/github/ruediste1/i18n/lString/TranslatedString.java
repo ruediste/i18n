@@ -14,18 +14,16 @@ import com.google.common.base.Objects;
  * resource is found, the fallback is used (if not null).
  * </p>
  */
-public class TranslatedString implements LString {
+public class TranslatedString extends LString {
     final private String resourceKey;
     private final String fallback;
     private final TranslatedStringResolver resolver;
 
-    public TranslatedString(TranslatedStringResolver resolver,
-            String resourceKey) {
+    public TranslatedString(TranslatedStringResolver resolver, String resourceKey) {
         this(resolver, resourceKey, null);
     }
 
-    public TranslatedString(TranslatedStringResolver resolver,
-            String resourceKey, String fallback) {
+    public TranslatedString(TranslatedStringResolver resolver, String resourceKey, String fallback) {
         this.resolver = resolver;
         this.resourceKey = resourceKey;
         this.fallback = fallback;
@@ -41,8 +39,7 @@ public class TranslatedString implements LString {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).add("resourceKey", resourceKey)
-                .add("fallback", fallback).toString();
+        return Objects.toStringHelper(this).add("resourceKey", resourceKey).add("fallback", fallback).toString();
     }
 
     @Override
@@ -59,8 +56,7 @@ public class TranslatedString implements LString {
             return false;
         }
         TranslatedString other = (TranslatedString) obj;
-        return Objects.equal(resourceKey, other.resourceKey)
-                && Objects.equal(fallback, other.fallback)
+        return Objects.equal(resourceKey, other.resourceKey) && Objects.equal(fallback, other.fallback)
                 && Objects.equal(resolver, other.resolver);
     }
 

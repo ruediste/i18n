@@ -5,9 +5,9 @@ import static java.util.stream.Collectors.joining;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.messageFormat.ast.DateTimeNode;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public abstract class DateTimeParserBase extends FormatTypeParserBase {
 
@@ -21,9 +21,9 @@ public abstract class DateTimeParserBase extends FormatTypeParserBase {
 
 	@Override
 	public PatternNode style(String argumentName) {
-		return Optional(
+		return Opt(
 				() -> {
-					String(",");
+					Str(",");
 					whiteSpace();
 
 					java.lang.String style = OneOrMoreChars(

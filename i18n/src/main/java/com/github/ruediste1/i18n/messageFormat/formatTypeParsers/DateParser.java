@@ -5,7 +5,7 @@ import java.time.format.FormatStyle;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 
 public class DateParser extends DateTimeParserBase {
 

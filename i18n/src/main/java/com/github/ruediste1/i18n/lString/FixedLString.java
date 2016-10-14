@@ -6,7 +6,7 @@ import java.util.Locale;
  * {@link LString} implementation resolving to a fixed string, idependant of the
  * locale.
  */
-public class FixedLString implements LString {
+public class FixedLString extends LString {
 
     private final String value;
 

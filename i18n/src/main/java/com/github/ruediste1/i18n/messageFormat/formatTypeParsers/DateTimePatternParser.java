@@ -2,9 +2,9 @@ package com.github.ruediste1.i18n.messageFormat.formatTypeParsers;
 
 import java.time.format.DateTimeFormatter;
 
+import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.messageFormat.ast.DateTimeNode;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
-import com.github.ruediste1.lambdaPegParser.DefaultParsingContext;
 
 public class DateTimePatternParser extends FormatTypeParserBase {
 
@@ -14,7 +14,7 @@ public class DateTimePatternParser extends FormatTypeParserBase {
 
 	@Override
 	public PatternNode style(java.lang.String argumentName) {
-		String(",");
+		Str(",");
 		whiteSpace();
 		String pattern = subFormatPattern();
 		whiteSpace();

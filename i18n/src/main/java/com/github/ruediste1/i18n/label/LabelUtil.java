@@ -853,7 +853,7 @@ public class LabelUtil {
     }
 
     public LString getLabel(Object obj) {
-        return tryGetLabel(obj).map(x -> (LString) x).orElseGet(() -> l -> Objects.toString(obj));
+        return tryGetLabel(obj).map(x -> (LString) x).orElseGet(() -> LString.of(Objects.toString(obj)));
     }
 
     /**

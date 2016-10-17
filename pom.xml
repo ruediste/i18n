@@ -7,7 +7,7 @@
 	<version>1.0-SNAPSHOT</version>
 	<name>i18n utilities parent</name>
 
-	<description>Lightweigth compile time module system, aimed at package dependency organization.</description>
+	<description>parent project for i18n, providing i18n utilities targeted at Domain Driven Design projects</description>
 
 	<organization>
 		<name>Ruedi Steinmann</name>
@@ -46,9 +46,8 @@
 	<modules>
 		<module>i18n</module>
 		<module>maven</module>
+		<module>api</module>
 	</modules>
-
-
 
 	<build>
 		<plugins>
@@ -76,6 +75,20 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.17</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-failsafe-plugin</artifactId>
+					<version>2.17</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 	<dependencies>
 		<dependency>

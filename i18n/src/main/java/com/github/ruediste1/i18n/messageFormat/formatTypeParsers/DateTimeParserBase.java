@@ -9,7 +9,7 @@ import com.github.ruediste.lambdaPegParser.DefaultParsingContext;
 import com.github.ruediste1.i18n.messageFormat.ast.DateTimeNode;
 import com.github.ruediste1.i18n.messageFormat.ast.PatternNode;
 
-public abstract class DateTimeParserBase extends FormatTypeParserBase {
+public abstract class DateTimeParserBase extends FormatTypeParser {
 
 	protected abstract Map<java.lang.String, DateTimeFormatter> getFormatters();
 

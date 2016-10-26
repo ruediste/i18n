@@ -10,7 +10,7 @@ import com.ibm.icu.text.DecimalFormat;
 import com.ibm.icu.text.DecimalFormatSymbols;
 import com.ibm.icu.text.NumberFormat;
 
-public class NumberParser extends FormatTypeParserBase {
+public class NumberParser extends FormatTypeParser {
 
     public NumberParser(DefaultParsingContext ctx) {
         super(ctx);

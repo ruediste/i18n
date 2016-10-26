@@ -43,7 +43,7 @@ import com.ibm.icu.text.PluralRules;
  * 
  *
  */
-public class PluralParser extends FormatTypeParserBase {
+public class PluralParser extends FormatTypeParser {
 
     public PluralParser(DefaultParsingContext ctx) {
         super(ctx);
